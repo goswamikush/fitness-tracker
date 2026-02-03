@@ -11,15 +11,7 @@ import SwiftData
 struct ContentView: View {
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Text("Fitness Tracker")
-                    .font(.largeTitle)
-                    .bold()
-                
-                Text("Ready to build your macro tracking app!")
-                    .foregroundStyle(.secondary)
-            }
-            .navigationTitle("Dashboard")
+            DashboardView()
         }
     }
 }
