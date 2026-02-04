@@ -14,9 +14,12 @@ struct DashboardView: View {
                 .ignoresSafeArea()
             
             VStack {
-                Text("Dashboard")
+                Text("Daily Log")
                     .foregroundColor(.white)
+                    .font(.largeTitle.bold())
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
+            .padding()
         }
         .navigationBarTitleDisplayMode(.large)
     }
