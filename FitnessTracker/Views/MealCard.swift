@@ -14,6 +14,9 @@ struct MealCard: View {
             HStack() {
                 Text("BREAKFAST")
                     .foregroundColor(.gray)
+                
+                Spacer()
+                
                 Text("290 kcal")
                     .foregroundColor(.gray)
             }
