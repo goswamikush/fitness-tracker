@@ -21,6 +21,7 @@ struct MealCard: View {
                     .foregroundColor(.gray)
             }
         }
+        .padding()
     }
 }
 
