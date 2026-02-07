@@ -7,19 +7,28 @@
 
 import SwiftUI
 
+struct MealSectionHeader: View {
+    let title: String
+    let calories: Int
+
+    var body: some View {
+        HStack {
+            Text(title)
+                .foregroundColor(.gray)
+
+            Spacer()
+
+            Text("\(calories) kcal")
+                .foregroundColor(.gray)
+        }
+    }
+}
+
 struct MealCard: View {
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack() {
-                Text("BREAKFAST")
-                    .foregroundColor(.gray)
-                
-                Spacer()
-                
-                Text("290 kcal")
-                    .foregroundColor(.gray)
-            }
+
         }
         .padding()
     }
@@ -29,7 +38,11 @@ struct MealCard: View {
     ZStack {
         AppColors.background
             .ignoresSafeArea()
-        
-        MealCard()
+
+        VStack(alignment: .leading, spacing: 8) {
+            MealSectionHeader(title: "BREAKFAST", calories: 290)
+            MealCard()
+        }
+        .padding()
     }
 }
