@@ -100,47 +100,58 @@ private extension AddFoodView {
     }
 
     struct RecentFoodRow: View {
+        let brand: String
         let name: String
-        let calories: String
-        let protein: String
-        let carbs: String
-        let fats: String
+        let caloriesInt: Int
+        let proteinInt: Int
+        let carbsInt: Int
+        let fatsInt: Int
         let serving: String
 
         var body: some View {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text(name)
-                    .foregroundColor(.white)
-                    .font(.custom(Fonts.interSemiBold, size: FontSize.lg))
+            NavigationLink(destination: AddEntryView(
+                brand: brand,
+                name: name,
+                servingSize: serving,
+                calories: caloriesInt,
+                protein: proteinInt,
+                carbs: carbsInt,
+                fat: fatsInt
+            )) {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Text(name)
+                        .foregroundColor(.white)
+                        .font(.custom(Fonts.interSemiBold, size: FontSize.lg))
 
-                HStack(spacing: Spacing.sm) {
-                    Text(calories)
-                        .foregroundColor(AppColors.macroTextColor)
-                        .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                    HStack(spacing: Spacing.sm) {
+                        Text("\(caloriesInt) kcal")
+                            .foregroundColor(AppColors.macroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.xs))
 
-                    MacroBadge(color: MacroColors.protein, value: protein)
-                    MacroBadge(color: MacroColors.carbs, value: carbs)
-                    MacroBadge(color: MacroColors.fats, value: fats)
+                        MacroBadge(color: MacroColors.protein, value: "\(proteinInt)p")
+                        MacroBadge(color: MacroColors.carbs, value: "\(carbsInt)c")
+                        MacroBadge(color: MacroColors.fats, value: "\(fatsInt)f")
 
-                    Text("|")
-                        .foregroundColor(AppColors.macroTextColor)
-                        .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                        Text("|")
+                            .foregroundColor(AppColors.macroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.xs))
 
-                    Text(serving)
-                        .foregroundColor(AppColors.macroTextColor)
-                        .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                        Text(serving)
+                            .foregroundColor(AppColors.macroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                    }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: CornerRadius.sm)
+                                .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                        )
+                )
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: CornerRadius.sm)
-                    .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: CornerRadius.sm)
-                            .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
-                    )
-            )
         }
     }
 
@@ -149,9 +160,9 @@ private extension AddFoodView {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 SectionHeader(title: "RECENT")
 
-                RecentFoodRow(name: "Almonds", calories: "164 kcal", protein: "6p", carbs: "6c", fats: "14f", serving: "1 oz")
-                RecentFoodRow(name: "Protein Bar", calories: "200 kcal", protein: "20p", carbs: "22c", fats: "7f", serving: "1 bar")
-                RecentFoodRow(name: "Cottage Cheese", calories: "110 kcal", protein: "12p", carbs: "5c", fats: "4f", serving: "1/2 cup")
+                RecentFoodRow(brand: "Blue Diamond", name: "Almonds", caloriesInt: 164, proteinInt: 6, carbsInt: 6, fatsInt: 14, serving: "1 oz")
+                RecentFoodRow(brand: "Nature Valley", name: "Protein Bar", caloriesInt: 200, proteinInt: 20, carbsInt: 22, fatsInt: 7, serving: "1 bar")
+                RecentFoodRow(brand: "Daisy", name: "Cottage Cheese", caloriesInt: 110, proteinInt: 12, carbsInt: 5, fatsInt: 4, serving: "1/2 cup")
             }
         }
     }
