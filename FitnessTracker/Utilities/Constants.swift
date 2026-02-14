@@ -10,7 +10,8 @@ import SwiftUI
 struct AppColors {
     static let background = Color(red: 18/255, green: 18/255, blue: 18/255)
     static let cardBackground = Color(red: 26/255, green: 26/255, blue: 26/255)
-    static let macroTextColor = Color(red: 161/255, green:  161/255, blue: 170/255)
+    static let lightMacroTextColor = Color(red: 161/255, green:  161/255, blue: 170/255)
+    static let macroTextColor = Color(red: 250/255, green:  250/255, blue: 250/255).opacity(0.8)
 }
 
 struct MacroColors {
@@ -51,7 +52,12 @@ enum CornerRadius {
 enum IconSize {
     static let xs: CGFloat = 3
     static let sm: CGFloat = 4
-    static let md: CGFloat = 12
+    static let md: CGFloat = 6
+    static let lg: CGFloat = 12
+}
+
+enum Opacity {
+    static let divider: Double = 0.2
 }
 
 enum CardStyle {

@@ -10,45 +10,17 @@ import SwiftUI
 struct FoodItem: View {
 
     var body: some View {
-
         VStack {
             HStack {
                 VStack(alignment: .leading) {
-                    // Item
+                    Text("Grilled Chicken Salad")
+                        .foregroundStyle(.white)
+                        .font(.custom(Fonts.interMedium, size: FontSize.lg))
+
                     HStack() {
-                        Text("Grilled Chicken Salad")
-                            .foregroundStyle(.white)
-                            .font(.custom(Fonts.interMedium, size: FontSize.lg))
-                    }
-
-                    // Macros
-                    HStack() {
-                        HStack(spacing: Spacing.xs) {
-                            Circle()
-                                .fill(MacroColors.protein)
-                                  .frame(width: IconSize.sm, height: IconSize.sm)
-                            Text("45p")
-                                .foregroundStyle(AppColors.macroTextColor)
-                                .font(.custom(Fonts.interRegular, size: FontSize.xs))
-                        }
-
-                        HStack(spacing: Spacing.xs) {
-                            Circle()
-                                .fill(MacroColors.carbs)
-                                  .frame(width: IconSize.sm, height: IconSize.sm)
-                            Text("12c")
-                                .foregroundStyle(AppColors.macroTextColor)
-                                .font(.custom(Fonts.interRegular, size: FontSize.xs))
-                        }
-
-                        HStack(spacing: Spacing.xs) {
-                            Circle()
-                                .fill(MacroColors.fats)
-                                  .frame(width: IconSize.sm, height: IconSize.sm)
-                            Text("20f")
-                                .foregroundStyle(AppColors.macroTextColor)
-                                .font(.custom(Fonts.interRegular, size: FontSize.xs))
-                        }
+                        MacroBadge(color: MacroColors.protein, value: "45p")
+                        MacroBadge(color: MacroColors.carbs, value: "12c")
+                        MacroBadge(color: MacroColors.fats, value: "20f")
 
                         Divider()
                             .frame(height: FontSize.lg)
@@ -58,7 +30,7 @@ struct FoodItem: View {
                         HStack(spacing: Spacing.md) {
                             Circle()
                                 .fill(AppColors.macroTextColor)
-                                  .frame(width: IconSize.xs, height: IconSize.xs)
+                                .frame(width: IconSize.xs, height: IconSize.xs)
                             Text("256g")
                                 .foregroundStyle(AppColors.macroTextColor.opacity(0.6))
                                 .font(.custom(Fonts.interRegular, size: FontSize.xs))
@@ -71,6 +43,27 @@ struct FoodItem: View {
                 Text("450 cal")
                     .foregroundStyle(.white)
                     .font(.custom(Fonts.interRegular, size: FontSize.md))
+            }
+        }
+    }
+}
+
+// MARK: - Subcomponents
+
+private extension FoodItem {
+
+    struct MacroBadge: View {
+        let color: Color
+        let value: String
+
+        var body: some View {
+            HStack(spacing: Spacing.xs) {
+                Circle()
+                    .fill(color)
+                    .frame(width: IconSize.sm, height: IconSize.sm)
+                Text(value)
+                    .foregroundStyle(AppColors.macroTextColor)
+                    .font(.custom(Fonts.interRegular, size: FontSize.xs))
             }
         }
     }
