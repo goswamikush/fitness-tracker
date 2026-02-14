@@ -12,16 +12,41 @@ struct DashboardView: View {
         ZStack {
             AppColors.background
                 .ignoresSafeArea()
-            
-            VStack {
-                Text("Daily Log")
-                    .foregroundColor(.white)
-                    .font(.largeTitle.bold())
-                    .frame(maxWidth: .infinity, alignment: .leading)
+
+            ScrollView {
+                VStack(spacing: 24) {
+                    DashboardHeaderView()
+
+                    MealsSectionHeader()
+
+                    MealCard()
+                    MealCard()
+                }
+                .padding()
             }
-            .padding()
         }
         .navigationBarTitleDisplayMode(.large)
+    }
+}
+
+// MARK: - Subcomponents
+
+private extension DashboardView {
+
+    struct MealsSectionHeader: View {
+        var body: some View {
+            HStack {
+                Text("Meals")
+                    .foregroundStyle(.white)
+                    .font(.custom(Fonts.outfitSemiBold, size: 22))
+
+                Spacer()
+
+                Text("5 Items")
+                    .foregroundStyle(AppColors.lightMacroTextColor)
+                    .font(.custom(Fonts.interRegular, size: 12))
+            }
+        }
     }
 }
 
