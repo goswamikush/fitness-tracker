@@ -13,16 +13,19 @@ struct DashboardView: View {
             AppColors.background
                 .ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: 24) {
-                    DashboardHeaderView()
+            VStack(spacing: 24) {
+                DashboardHeaderView()
+                    .padding(.horizontal)
 
-                    MealsSectionHeader()
+                ScrollView {
+                    VStack(spacing: 24) {
+                        MealsSectionHeader()
 
-                    MealCard()
-                    MealCard()
+                        MealCard()
+                        MealCard()
+                    }
+                    .padding(.horizontal)
                 }
-                .padding()
             }
         }
         .navigationBarTitleDisplayMode(.large)
