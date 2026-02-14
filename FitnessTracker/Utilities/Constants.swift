@@ -22,6 +22,8 @@ struct MacroColors {
 enum Fonts {
     static let interRegular = "Inter18pt-Regular"
     static let interMedium = "Inter18pt-Medium"
+    static let interSemiBold = "Inter18pt-SemiBold"
+    static let outfitSemiBold = "Outfit-SemiBold"
 }
 
 

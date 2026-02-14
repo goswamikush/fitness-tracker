@@ -72,9 +72,7 @@ struct FoodItem: View {
                     .foregroundStyle(.white)
                     .font(.custom(Fonts.interRegular, size: 14))
             }
-//            .border(.gray)
         }
-        .padding()
     }
 }
 
