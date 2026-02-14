@@ -33,7 +33,7 @@ struct ContentView: View {
 
             Tab(value: 2) {
                 NavigationStack {
-                    DashboardView() // Placeholder for Body
+                    BodyWeightView()
                 }
             } label: {
                 Image(systemName: "scale.3d")
