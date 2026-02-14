@@ -58,9 +58,11 @@ private extension MealCard {
                 Spacer()
 
                 HStack(spacing: Spacing.xl) {
-                    Image(systemName: "plus")
-                        .font(.system(size: IconSize.lg, weight: .medium))
-                        .foregroundColor(AppColors.macroTextColor)
+                    NavigationLink(destination: AddFoodView(mealName: "Lunch")) {
+                        Image(systemName: "plus")
+                            .font(.system(size: IconSize.lg, weight: .medium))
+                            .foregroundColor(AppColors.macroTextColor)
+                    }
 
                     Image(systemName: "chevron.up")
                         .font(.system(size: IconSize.lg, weight: .medium))
