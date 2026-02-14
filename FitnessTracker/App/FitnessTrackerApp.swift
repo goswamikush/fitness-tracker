@@ -10,6 +10,15 @@ import SwiftData
 
 @main
 struct FitnessTrackerApp: App {
+    init() {
+          for family in UIFont.familyNames.sorted() {
+              for name in UIFont.fontNames(forFamilyName: family) {
+                  if name.lowercased().contains("inter") {
+                      print("Found: \(name)")
+                  }
+              }
+          }
+      }
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
         ])
