@@ -10,36 +10,52 @@ import SwiftUI
 struct MealCard: View {
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(spacing: 30) {
+        VStack(alignment: .leading, spacing: Spacing.lg) {
+            VStack(spacing: Spacing.xxl) {
                 HStack {
-                    VStack(alignment: .leading, spacing: 5) {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
                         Text("Lunch")
                             .foregroundStyle(.white)
-                            .font(.custom(Fonts.outfitSemiBold, size: 18))
-                        
+                            .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
+
                         Text("545 kcal")
                             .foregroundStyle(AppColors.macroTextColor)
-                            .font(.custom(Fonts.interMedium, size: 12))
+                            .font(.custom(Fonts.interMedium, size: FontSize.sm))
                     }
-                    
+
                     Spacer()
-                    
-                    HStack(spacing: 20) {
+
+                    HStack(spacing: Spacing.xl) {
                         Image(systemName: "plus")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: IconSize.md, weight: .medium))
                             .foregroundColor(AppColors.macroTextColor)
-                        
+
                         Image(systemName: "chevron.up")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: IconSize.md, weight: .medium))
                             .foregroundColor(AppColors.macroTextColor)
                     }
                 }
-                
-//                FoodItem()
+
+                FoodItem()
+
+                FoodItem()
+
             }
         }
         .padding()
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.md)
+                .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                )
+        )
+        .shadow(color: .black.opacity(CardStyle.shadowOpacity), radius: CardStyle.shadowRadius, x: 0, y: CardStyle.shadowY)
+        .mask(
+            Rectangle()
+                .padding(.bottom, CardStyle.maskPadding)
+        )
     }
 }
 

@@ -26,4 +26,41 @@ enum Fonts {
     static let outfitSemiBold = "Outfit-SemiBold"
 }
 
+enum FontSize {
+    static let xs: CGFloat = 11
+    static let sm: CGFloat = 12
+    static let md: CGFloat = 14
+    static let lg: CGFloat = 15
+    static let xl: CGFloat = 18
+}
 
+enum Spacing {
+    static let xs: CGFloat = 3
+    static let sm: CGFloat = 5
+    static let md: CGFloat = 7
+    static let lg: CGFloat = 16
+    static let xl: CGFloat = 20
+    static let xxl: CGFloat = 30
+}
+
+enum CornerRadius {
+    static let sm: CGFloat = 12
+    static let md: CGFloat = 16
+}
+
+enum IconSize {
+    static let xs: CGFloat = 3
+    static let sm: CGFloat = 4
+    static let md: CGFloat = 12
+}
+
+enum CardStyle {
+    static let fillColor = Color(red: 24/255, green: 24/255, blue: 27/255)
+    static let fillOpacity: Double = 0.6
+    static let borderOpacity: Double = 0.1
+    static let borderWidth: CGFloat = 1
+    static let shadowOpacity: Double = 0.3
+    static let shadowRadius: CGFloat = 10
+    static let shadowY: CGFloat = 3
+    static let maskPadding: CGFloat = -10
+}
