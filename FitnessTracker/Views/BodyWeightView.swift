@@ -31,22 +31,70 @@ struct BodyWeightView: View {
         let calendar = Calendar.current
         let today = Date()
         return [
+            // Week 1 (15 weeks ago)
             WeightEntry(date: calendar.date(byAdding: .day, value: -105, to: today)!, weight: 83.2, change: 0.0),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -98, to: today)!, weight: 82.8, change: -0.4),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -91, to: today)!, weight: 83.0, change: 0.2),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -84, to: today)!, weight: 82.4, change: -0.6),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -77, to: today)!, weight: 81.8, change: -0.6),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -70, to: today)!, weight: 81.5, change: -0.3),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -63, to: today)!, weight: 80.9, change: -0.6),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -56, to: today)!, weight: 80.3, change: -0.6),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -49, to: today)!, weight: 80.1, change: -0.2),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -42, to: today)!, weight: 79.8, change: -0.3),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -35, to: today)!, weight: 79.5, change: -0.3),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -28, to: today)!, weight: 79.2, change: -0.3),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -21, to: today)!, weight: 79.0, change: -0.2),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -14, to: today)!, weight: 78.6, change: -0.4),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -7, to: today)!, weight: 78.8, change: 0.2),
-            WeightEntry(date: calendar.date(byAdding: .day, value: 0, to: today)!, weight: 78.4, change: -0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -104, to: today)!, weight: 83.5, change: 0.3),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -103, to: today)!, weight: 83.0, change: -0.5),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -101, to: today)!, weight: 83.4, change: 0.4),
+            // Week 2
+            WeightEntry(date: calendar.date(byAdding: .day, value: -98, to: today)!, weight: 82.8, change: -0.6),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -97, to: today)!, weight: 83.1, change: 0.3),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -95, to: today)!, weight: 82.6, change: -0.5),
+            // Week 3
+            WeightEntry(date: calendar.date(byAdding: .day, value: -91, to: today)!, weight: 83.0, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -90, to: today)!, weight: 82.7, change: -0.3),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -88, to: today)!, weight: 83.2, change: 0.5),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -86, to: today)!, weight: 82.5, change: -0.7),
+            // Week 4
+            WeightEntry(date: calendar.date(byAdding: .day, value: -84, to: today)!, weight: 82.4, change: -0.1),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -83, to: today)!, weight: 82.8, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -81, to: today)!, weight: 82.1, change: -0.7),
+            // Week 5
+            WeightEntry(date: calendar.date(byAdding: .day, value: -77, to: today)!, weight: 81.8, change: -0.3),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -76, to: today)!, weight: 82.2, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -74, to: today)!, weight: 81.5, change: -0.7),
+            // Week 6
+            WeightEntry(date: calendar.date(byAdding: .day, value: -70, to: today)!, weight: 81.5, change: 0.0),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -69, to: today)!, weight: 81.9, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -67, to: today)!, weight: 81.2, change: -0.7),
+            // Week 7
+            WeightEntry(date: calendar.date(byAdding: .day, value: -63, to: today)!, weight: 80.9, change: -0.3),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -62, to: today)!, weight: 81.3, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -60, to: today)!, weight: 80.6, change: -0.7),
+            // Week 8
+            WeightEntry(date: calendar.date(byAdding: .day, value: -56, to: today)!, weight: 80.3, change: -0.3),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -55, to: today)!, weight: 80.7, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -53, to: today)!, weight: 80.0, change: -0.7),
+            // Week 9
+            WeightEntry(date: calendar.date(byAdding: .day, value: -49, to: today)!, weight: 80.1, change: 0.1),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -48, to: today)!, weight: 80.5, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -46, to: today)!, weight: 79.8, change: -0.7),
+            // Week 10
+            WeightEntry(date: calendar.date(byAdding: .day, value: -42, to: today)!, weight: 79.8, change: 0.0),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -41, to: today)!, weight: 80.2, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -39, to: today)!, weight: 79.5, change: -0.7),
+            // Week 11
+            WeightEntry(date: calendar.date(byAdding: .day, value: -35, to: today)!, weight: 79.5, change: 0.0),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -34, to: today)!, weight: 79.9, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -32, to: today)!, weight: 79.2, change: -0.7),
+            // Week 12
+            WeightEntry(date: calendar.date(byAdding: .day, value: -28, to: today)!, weight: 79.2, change: 0.0),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -27, to: today)!, weight: 79.6, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -25, to: today)!, weight: 78.9, change: -0.7),
+            // Week 13
+            WeightEntry(date: calendar.date(byAdding: .day, value: -21, to: today)!, weight: 79.0, change: 0.1),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -20, to: today)!, weight: 79.4, change: 0.4),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -18, to: today)!, weight: 78.7, change: -0.7),
+            // Week 14
+            WeightEntry(date: calendar.date(byAdding: .day, value: -14, to: today)!, weight: 78.6, change: -0.1),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -13, to: today)!, weight: 79.1, change: 0.5),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -11, to: today)!, weight: 78.3, change: -0.8),
+            // Week 15
+            WeightEntry(date: calendar.date(byAdding: .day, value: -7, to: today)!, weight: 78.8, change: 0.5),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -5, to: today)!, weight: 78.2, change: -0.6),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -3, to: today)!, weight: 78.9, change: 0.7),
+            WeightEntry(date: calendar.date(byAdding: .day, value: -1, to: today)!, weight: 78.1, change: -0.8),
+            WeightEntry(date: calendar.date(byAdding: .day, value: 0, to: today)!, weight: 78.4, change: 0.3),
         ]
     }()
 
@@ -234,38 +282,79 @@ private extension BodyWeightView {
         }
     }
 
+    struct WeeklyAverage: Identifiable {
+        let id = UUID()
+        let date: Date
+        let average: Double
+    }
+
     struct WeightChart: View {
         let entries: [WeightEntry]
 
+        private var weeklyAverages: [WeeklyAverage] {
+            let calendar = Calendar.current
+            let grouped = Dictionary(grouping: entries) { entry in
+                calendar.dateInterval(of: .weekOfYear, for: entry.date)?.start ?? entry.date
+            }
+            return grouped.map { (weekStart, weekEntries) in
+                let avg = weekEntries.map(\.weight).reduce(0, +) / Double(weekEntries.count)
+                return WeeklyAverage(date: weekStart, average: avg)
+            }
+            .sorted { $0.date < $1.date }
+        }
+
         private var yMin: Double {
-            (entries.map(\.weight).min() ?? 78) - 1.0
+            let allValues = entries.map(\.weight) + weeklyAverages.map(\.average)
+            return (allValues.min() ?? 78) - 1.0
         }
         private var yMax: Double {
-            (entries.map(\.weight).max() ?? 84) + 0.5
+            let allValues = entries.map(\.weight) + weeklyAverages.map(\.average)
+            return (allValues.max() ?? 84) + 0.5
         }
 
         var body: some View {
-            Chart(entries) { entry in
-                LineMark(
-                    x: .value("Date", entry.date),
-                    y: .value("Weight", entry.weight)
-                )
-                .foregroundStyle(MacroColors.carbs)
-                .interpolationMethod(.catmullRom)
-                .lineStyle(StrokeStyle(lineWidth: 2))
-
-                AreaMark(
-                    x: .value("Date", entry.date),
-                    y: .value("Weight", entry.weight)
-                )
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [MacroColors.carbs.opacity(0.15), MacroColors.carbs.opacity(0.02)],
-                        startPoint: .top,
-                        endPoint: .bottom
+            Chart {
+                ForEach(entries) { entry in
+                    LineMark(
+                        x: .value("Date", entry.date),
+                        y: .value("Weight", entry.weight),
+                        series: .value("Series", "Daily")
                     )
-                )
-                .interpolationMethod(.catmullRom)
+                    .foregroundStyle(MacroColors.carbs.opacity(0.35))
+                    .interpolationMethod(.catmullRom)
+                    .lineStyle(StrokeStyle(lineWidth: 1))
+
+                    AreaMark(
+                        x: .value("Date", entry.date),
+                        y: .value("Weight", entry.weight)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [MacroColors.carbs.opacity(0.1), MacroColors.carbs.opacity(0.01)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
+                }
+
+                ForEach(weeklyAverages) { avg in
+                    LineMark(
+                        x: .value("Date", avg.date),
+                        y: .value("Weight", avg.average),
+                        series: .value("Series", "Weekly Avg")
+                    )
+                    .foregroundStyle(MacroColors.carbs)
+                    .interpolationMethod(.catmullRom)
+                    .lineStyle(StrokeStyle(lineWidth: 3))
+
+                    PointMark(
+                        x: .value("Date", avg.date),
+                        y: .value("Weight", avg.average)
+                    )
+                    .foregroundStyle(MacroColors.carbs)
+                    .symbolSize(20)
+                }
             }
             .chartYScale(domain: yMin...yMax)
             .chartXAxis {
