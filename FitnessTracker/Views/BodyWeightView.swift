@@ -84,9 +84,11 @@ private extension BodyWeightView {
 
                     Spacer()
 
-                    Image(systemName: "plus")
-                        .font(.system(size: IconSize.lg, weight: .medium))
-                        .foregroundColor(AppColors.macroTextColor)
+                    NavigationLink(destination: AddWeightView()) {
+                        Image(systemName: "plus")
+                            .font(.system(size: IconSize.lg, weight: .medium))
+                            .foregroundColor(AppColors.macroTextColor)
+                    }
                 }
 
                 Divider()
