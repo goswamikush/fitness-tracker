@@ -58,7 +58,7 @@ struct BodyWeightView: View {
             ScrollView {
                 VStack(spacing: Spacing.xl) {
                     Header()
-                    CurrentWeightSection()
+                    WeightSummaryCards(entries: entries)
                     DateRangePicker(selectedRange: $selectedRange)
                     WeightChart(entries: entries)
                     HistorySection(entries: entries)
@@ -97,31 +97,104 @@ private extension BodyWeightView {
         }
     }
 
-    struct CurrentWeightSection: View {
+    struct WeightSummaryCards: View {
+        let entries: [WeightEntry]
+
+        private var currentWeight: Double {
+            entries.last?.weight ?? 0
+        }
+
+        private var weeklyAvg: Double {
+            let calendar = Calendar.current
+            let oneWeekAgo = calendar.date(byAdding: .day, value: -7, to: Date())!
+            let thisWeek = entries.filter { $0.date >= oneWeekAgo }
+            guard !thisWeek.isEmpty else { return currentWeight }
+            return thisWeek.map(\.weight).reduce(0, +) / Double(thisWeek.count)
+        }
+
+        private var lastWeekAvg: Double {
+            let calendar = Calendar.current
+            let oneWeekAgo = calendar.date(byAdding: .day, value: -7, to: Date())!
+            let twoWeeksAgo = calendar.date(byAdding: .day, value: -14, to: Date())!
+            let lastWeek = entries.filter { $0.date >= twoWeeksAgo && $0.date < oneWeekAgo }
+            guard !lastWeek.isEmpty else { return weeklyAvg }
+            return lastWeek.map(\.weight).reduce(0, +) / Double(lastWeek.count)
+        }
+
+        private var totalChange: Double {
+            guard let first = entries.first else { return 0 }
+            return currentWeight - first.weight
+        }
+
+        private var weekOverWeekChange: Double {
+            weeklyAvg - lastWeekAvg
+        }
+
         var body: some View {
-            VStack(spacing: Spacing.sm) {
-                Text("CURRENT WEIGHT")
+            HStack(spacing: Spacing.lg) {
+                SummaryCard(
+                    label: "CURRENT",
+                    value: String(format: "%.1f", currentWeight),
+                    unit: "kg",
+                    change: String(format: "%.1f", totalChange),
+                    changeLabel: "kg",
+                    isNegative: totalChange <= 0
+                )
+
+                SummaryCard(
+                    label: "WEEKLY AVG",
+                    value: String(format: "%.1f", weeklyAvg),
+                    unit: "kg",
+                    change: String(format: "%.1f", weekOverWeekChange),
+                    changeLabel: "kg vs last wk",
+                    isNegative: weekOverWeekChange <= 0
+                )
+            }
+        }
+    }
+
+    struct SummaryCard: View {
+        let label: String
+        let value: String
+        let unit: String
+        let change: String
+        let changeLabel: String
+        let isNegative: Bool
+
+        var body: some View {
+            VStack(spacing: Spacing.md) {
+                Text(label)
                     .foregroundStyle(AppColors.lightMacroTextColor)
                     .font(.custom(Fonts.interMedium, size: FontSize.xs))
                     .tracking(1)
 
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("78.4")
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(value)
                         .foregroundStyle(.white)
-                        .font(.custom(Fonts.outfitSemiBold, size: 48))
-
-                    Text("kg")
+                        .font(.custom(Fonts.outfitSemiBold, size: 32))
+                    Text(unit)
                         .foregroundStyle(AppColors.lightMacroTextColor)
-                        .font(.custom(Fonts.interMedium, size: 20))
+                        .font(.custom(Fonts.interMedium, size: FontSize.md))
                 }
 
-                Text("-0.2kg this week")
-                    .foregroundStyle(MacroColors.carbs)
-                    .font(.custom(Fonts.interMedium, size: FontSize.sm))
-                    .padding(.top, Spacing.xs)
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "arrow.down.right")
+                        .font(.system(size: 9, weight: .bold))
+                    Text("\(change) \(changeLabel)")
+                        .font(.custom(Fonts.interMedium, size: FontSize.xs))
+                }
+                .foregroundStyle(isNegative ? MacroColors.carbs : Color(red: 250/255, green: 100/255, blue: 100/255))
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.lg)
+            .padding(.vertical, Spacing.xl)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.sm)
+                    .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: CornerRadius.sm)
+                            .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                    )
+            )
         }
     }
 
