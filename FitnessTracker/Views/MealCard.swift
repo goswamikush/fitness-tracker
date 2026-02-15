@@ -8,17 +8,14 @@
 import SwiftUI
 
 struct MealCard: View {
+    @State private var isExpanded = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            VStack(spacing: Spacing.xxl) {
-                Header()
-
-                FoodItem()
-
-                FoodItem()
-
-                Footer()
+            if isExpanded {
+                ExpandedContent(isExpanded: $isExpanded)
+            } else {
+                CollapsedContent(isExpanded: $isExpanded)
             }
         }
         .padding()
@@ -35,6 +32,7 @@ struct MealCard: View {
             Rectangle()
                 .padding(.bottom, CardStyle.maskPadding)
         )
+        .animation(.easeInOut(duration: 0.25), value: isExpanded)
     }
 }
 
@@ -42,7 +40,88 @@ struct MealCard: View {
 
 private extension MealCard {
 
-    struct Header: View {
+    struct ExpandedContent: View {
+        @Binding var isExpanded: Bool
+
+        var body: some View {
+            VStack(spacing: Spacing.xxl) {
+                ExpandedHeader(isExpanded: $isExpanded)
+                FoodItem()
+                FoodItem()
+                Footer()
+            }
+        }
+    }
+
+    struct CollapsedContent: View {
+        @Binding var isExpanded: Bool
+
+        var body: some View {
+            HStack {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text("Lunch")
+                        .foregroundStyle(.white)
+                        .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
+                    Text("2 items")
+                        .foregroundStyle(AppColors.lightMacroTextColor)
+                        .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                }
+
+                Spacer()
+
+                HStack(spacing: Spacing.lg) {
+                    HStack(spacing: Spacing.xs) {
+                        Circle()
+                            .fill(MacroColors.protein)
+                            .frame(width: IconSize.md, height: IconSize.md)
+                        Text("36p")
+                            .foregroundStyle(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                    }
+
+                    HStack(spacing: Spacing.xs) {
+                        Circle()
+                            .fill(MacroColors.carbs)
+                            .frame(width: IconSize.md, height: IconSize.md)
+                        Text("63c")
+                            .foregroundStyle(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                    }
+
+                    HStack(spacing: Spacing.xs) {
+                        Circle()
+                            .fill(MacroColors.fats)
+                            .frame(width: IconSize.md, height: IconSize.md)
+                        Text("7f")
+                            .foregroundStyle(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                    }
+
+                    Text("470 kcal")
+                        .foregroundStyle(AppColors.lightMacroTextColor)
+                        .font(.custom(Fonts.interRegular, size: FontSize.sm))
+
+                    NavigationLink(destination: AddFoodView(mealName: "Lunch")) {
+                        Image(systemName: "plus")
+                            .font(.system(size: IconSize.lg, weight: .medium))
+                            .foregroundColor(AppColors.macroTextColor)
+                    }
+
+                    Button {
+                        isExpanded.toggle()
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: IconSize.lg, weight: .medium))
+                            .foregroundColor(AppColors.macroTextColor)
+                    }
+                }
+            }
+        }
+    }
+
+    struct ExpandedHeader: View {
+        @Binding var isExpanded: Bool
+
         var body: some View {
             HStack {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -64,9 +143,13 @@ private extension MealCard {
                             .foregroundColor(AppColors.macroTextColor)
                     }
 
-                    Image(systemName: "chevron.up")
-                        .font(.system(size: IconSize.lg, weight: .medium))
-                        .foregroundColor(AppColors.macroTextColor)
+                    Button {
+                        isExpanded.toggle()
+                    } label: {
+                        Image(systemName: "chevron.up")
+                            .font(.system(size: IconSize.lg, weight: .medium))
+                            .foregroundColor(AppColors.macroTextColor)
+                    }
                 }
             }
         }
