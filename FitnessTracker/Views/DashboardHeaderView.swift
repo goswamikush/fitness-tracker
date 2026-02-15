@@ -102,10 +102,30 @@ private extension DashboardHeaderView {
 
     struct MacroRingsSection: View {
         var body: some View {
-            HStack(spacing: 50) {
-                MacroRing(current: 97, goal: 180, color: MacroColors.protein, label: "Protein")
-                MacroRing(current: 108, goal: 250, color: MacroColors.carbs, label: "Carbs")
-                MacroRing(current: 27, goal: 70, color: MacroColors.fats, label: "Fat")
+            VStack(spacing: Spacing.xl) {
+                HStack(spacing: 50) {
+                    MacroRing(current: 97, goal: 180, color: MacroColors.protein, label: "Protein")
+                    MacroRing(current: 108, goal: 250, color: MacroColors.carbs, label: "Carbs")
+                    MacroRing(current: 27, goal: 70, color: MacroColors.fats, label: "Fat")
+                }
+
+                NavigationLink(destination: NutritionAnalysisView()) {
+                    HStack(spacing: Spacing.md) {
+                        Image(systemName: "chart.pie")
+                            .font(.system(size: FontSize.sm))
+                        Text("View Nutrient Breakdown")
+                            .font(.custom(Fonts.interMedium, size: FontSize.sm))
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 10))
+                    }
+                    .foregroundStyle(AppColors.lightMacroTextColor)
+                    .padding(.horizontal, Spacing.xl)
+                    .padding(.vertical, Spacing.md)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.08))
+                    )
+                }
             }
         }
     }

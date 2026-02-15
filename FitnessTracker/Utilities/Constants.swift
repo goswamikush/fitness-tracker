@@ -18,6 +18,7 @@ struct MacroColors {
     static let carbs = Color(red: 66/255, green: 240/255, blue: 153/255)
     static let protein = Color(red: 81/255, green: 166/255, blue: 251/255)
     static let fats = Color(red: 250/255, green: 185/255, blue: 56/255)
+    static let calories = Color(red: 249/255, green: 115/255, blue: 22/255)
 }
 
 enum Fonts {
@@ -25,6 +26,7 @@ enum Fonts {
     static let interMedium = "Inter18pt-Medium"
     static let interSemiBold = "Inter18pt-SemiBold"
     static let outfitSemiBold = "Outfit-SemiBold"
+    static let outfitBold = "Outfit-Bold"
 }
 
 enum FontSize {

@@ -24,11 +24,11 @@ struct ContentView: View {
 
             Tab(value: 1) {
                 NavigationStack {
-                    DashboardView() // Placeholder for Nutrients
+                    ProgressView()
                 }
             } label: {
-                Image(systemName: "chart.bar")
-                Text("Nutrients")
+                Image(systemName: "target")
+                Text("Progress")
             }
 
             Tab(value: 2) {
