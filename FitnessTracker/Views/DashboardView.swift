@@ -48,6 +48,12 @@ private extension DashboardView {
                 Text("5 Items")
                     .foregroundStyle(AppColors.lightMacroTextColor)
                     .font(.custom(Fonts.interRegular, size: 12))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.08))
+                    )
             }
         }
     }
