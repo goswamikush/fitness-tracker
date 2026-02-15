@@ -8,11 +8,14 @@
 import SwiftUI
 
 struct MealCard: View {
+    var isEmpty: Bool = false
     @State private var isExpanded = true
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
-            if isExpanded {
+            if isEmpty {
+                EmptyContent(isExpanded: $isExpanded)
+            } else if isExpanded {
                 ExpandedContent(isExpanded: $isExpanded)
             } else {
                 CollapsedContent(isExpanded: $isExpanded)
@@ -39,6 +42,56 @@ struct MealCard: View {
 // MARK: - Subcomponents
 
 private extension MealCard {
+
+    struct EmptyContent: View {
+        @Binding var isExpanded: Bool
+
+        var body: some View {
+            VStack(spacing: Spacing.xl) {
+                HStack {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        Text("Dinner")
+                            .foregroundStyle(.white)
+                            .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
+                        Text("No food logged")
+                            .foregroundStyle(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                    }
+
+                    Spacer()
+
+                    HStack(spacing: Spacing.xl) {
+                        NavigationLink(destination: AddFoodView(mealName: "Dinner")) {
+                            Image(systemName: "plus")
+                                .font(.system(size: IconSize.lg, weight: .medium))
+                                .foregroundColor(AppColors.macroTextColor)
+                        }
+
+                        Button {
+                            isExpanded.toggle()
+                        } label: {
+                            Image(systemName: "chevron.up")
+                                .font(.system(size: IconSize.lg, weight: .medium))
+                                .foregroundColor(AppColors.macroTextColor)
+                        }
+                    }
+                }
+
+                NavigationLink(destination: AddFoodView(mealName: "Dinner")) {
+                    Text("Tap + to add food")
+                        .foregroundStyle(AppColors.lightMacroTextColor)
+                        .font(.custom(Fonts.interRegular, size: FontSize.md))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Spacing.lg)
+                        .background(
+                            RoundedRectangle(cornerRadius: CornerRadius.sm)
+                                .stroke(style: StrokeStyle(lineWidth: 1, dash: [6]))
+                                .foregroundStyle(Color.white.opacity(0.15))
+                        )
+                }
+            }
+        }
+    }
 
     struct ExpandedContent: View {
         @Binding var isExpanded: Bool
@@ -206,9 +259,11 @@ private extension MealCard {
         AppColors.background
             .ignoresSafeArea()
 
-        VStack(alignment: .leading, spacing: 8) {
-            MealCard()
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 8) {
+                MealCard(isEmpty: true)
+            }
+            .padding()
         }
-        .padding()
     }
 }

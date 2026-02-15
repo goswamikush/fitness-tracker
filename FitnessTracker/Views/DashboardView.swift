@@ -23,6 +23,7 @@ struct DashboardView: View {
 
                         MealCard()
                         MealCard()
+                        MealCard(isEmpty: true)
                     }
                     .padding(.horizontal)
                 }
