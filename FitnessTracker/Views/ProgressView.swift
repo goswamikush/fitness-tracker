@@ -99,10 +99,10 @@ private extension ProgressView {
 
         var body: some View {
             LazyVGrid(columns: columns, spacing: Spacing.lg) {
-                SummaryCard(icon: "flame", iconColor: MacroColors.fats, value: "1,850", unit: nil, subtitle: "avg. daily intake", badge: "TODAY")
+                SummaryCard(icon: "flame", iconColor: MacroColors.fats, value: "1,850", unit: nil, subtitle: "Daily Average", badge: "TODAY")
                 SummaryCard(icon: "target", iconColor: MacroColors.protein, value: "140", unit: "g", subtitle: "95% consistency", badge: "TODAY")
-                SummaryCard(icon: "drop", iconColor: MacroColors.protein, value: "2.1", unit: "L", subtitle: "daily average", badge: "TODAY")
-                SummaryCard(icon: "figure.walk", iconColor: MacroColors.carbs, value: "8,432", unit: nil, subtitle: "daily average", badge: "TODAY")
+                SummaryCard(icon: "drop", iconColor: MacroColors.protein, value: "2.1", unit: "L", subtitle: "Daily Average", badge: "TODAY")
+                SummaryCard(icon: "figure.walk", iconColor: MacroColors.carbs, value: "8,432", unit: nil, subtitle: "Daily Average", badge: "TODAY")
             }
         }
     }
@@ -139,12 +139,14 @@ private extension ProgressView {
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text(value)
                         .foregroundStyle(.white)
-                        .font(.custom(Fonts.outfitBold, size: 26))
+                        .font(.custom(Fonts.outfitSemiBold, size: 26))
+                        .tracking(-0.5)
 
                     if let unit {
                         Text(unit)
-                            .foregroundStyle(AppColors.lightMacroTextColor)
-                            .font(.custom(Fonts.interMedium, size: FontSize.md))
+                            .foregroundStyle(.white)
+                            .font(.custom(Fonts.outfitSemiBold, size: 26))
+                            .tracking(-0.5)
                     }
                 }
 
@@ -154,12 +156,21 @@ private extension ProgressView {
             }
             .padding(Spacing.lg)
             .background(
-                RoundedRectangle(cornerRadius: CornerRadius.sm)
-                    .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: CornerRadius.sm)
-                            .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
-                    )
+                ZStack(alignment: .topTrailing) {
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+
+                    Circle()
+                        .fill(iconColor)
+                        .frame(width: 80, height: 80)
+                        .blur(radius: 24)
+                        .opacity(0.1)
+                        .offset(x: 4, y: -4)
+
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
             )
             .shadow(color: .black.opacity(CardStyle.shadowOpacity), radius: CardStyle.shadowRadius, y: CardStyle.shadowY)
         }
@@ -272,7 +283,7 @@ private extension ProgressView {
         var body: some View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 Text("GOAL CONSISTENCY")
-                    .foregroundStyle(AppColors.lightMacroTextColor)
+                    .foregroundStyle(Color(red: 161/255, green: 161/255, blue: 170/255))
                     .font(.custom(Fonts.outfitBold, size: FontSize.xs))
                     .tracking(1)
 
