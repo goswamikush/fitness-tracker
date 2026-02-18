@@ -6,8 +6,10 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct MealCard: View {
+    @Environment(\.modelContext) private var modelContext
     let mealName: String
     let entries: [MealEntry]
     var logDate: Date = Date()
@@ -36,7 +38,7 @@ struct MealCard: View {
             if isEmpty {
                 EmptyContent(mealName: mealName, logDate: logDate, isExpanded: $isExpanded)
             } else if isExpanded {
-                ExpandedContent(mealName: mealName, logDate: logDate, entries: entries, totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat, isExpanded: $isExpanded)
+                ExpandedContent(mealName: mealName, logDate: logDate, entries: entries, totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat, isExpanded: $isExpanded, onDelete: deleteEntry)
             } else {
                 CollapsedContent(mealName: mealName, logDate: logDate, entries: entries, totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat, isExpanded: $isExpanded)
             }
@@ -50,12 +52,12 @@ struct MealCard: View {
                         .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
                 )
         )
-        .shadow(color: .black.opacity(CardStyle.shadowOpacity), radius: CardStyle.shadowRadius, x: 0, y: CardStyle.shadowY)
-        .mask(
-            Rectangle()
-                .padding(.bottom, CardStyle.maskPadding)
-        )
+        .clipped()
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
+    }
+
+    private func deleteEntry(_ entry: MealEntry) {
+        modelContext.delete(entry)
     }
 }
 
@@ -124,20 +126,43 @@ private extension MealCard {
         let totalCarbs: Int
         let totalFat: Int
         @Binding var isExpanded: Bool
+        let onDelete: (MealEntry) -> Void
 
         var body: some View {
-            VStack(spacing: Spacing.xxl) {
+            VStack(spacing: 0) {
                 ExpandedHeader(mealName: mealName, logDate: logDate, totalCalories: totalCalories, isExpanded: $isExpanded)
-                ForEach(entries) { entry in
-                    FoodItemRow(
-                        name: entry.foodItem?.name ?? "Unknown",
-                        calories: Int(entry.calories),
-                        protein: Int(entry.protein),
-                        carbs: Int(entry.carbs),
-                        fat: Int(entry.fat),
-                        servingGrams: Int(entry.servingGrams)
-                    )
+                    .padding(.bottom, Spacing.md)
+
+                List {
+                    ForEach(entries) { entry in
+                        FoodItemRow(
+                            name: entry.foodItem?.name ?? "Unknown",
+                            calories: Int(entry.calories),
+                            protein: Int(entry.protein),
+                            carbs: Int(entry.carbs),
+                            fat: Int(entry.fat),
+                            servingGrams: Int(entry.servingGrams)
+                        )
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 16))
+                        .listRowSeparator(.hidden)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                            Button(role: .destructive) {
+                                withAnimation {
+                                    onDelete(entry)
+                                }
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                            .tint(.red)
+                        }
+                    }
                 }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .frame(height: CGFloat(entries.count) * 56)
+                .scrollDisabled(true)
+
                 Footer(totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat)
             }
         }
