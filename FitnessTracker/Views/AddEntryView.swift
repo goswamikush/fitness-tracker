@@ -34,6 +34,7 @@ struct AddEntryView: View {
     let logDate: Date
     let initialServingSize: Double?
     let servingSizeUnit: String?
+    var onUpdateServing: ((Double) -> Void)?
 
     @State private var servingGrams: Double
 
@@ -89,6 +90,33 @@ struct AddEntryView: View {
         self._servingGrams = State(initialValue: foodItem.servingSize ?? 100)
     }
 
+    init(foodItem: FoodItem, servingGrams: Double, onUpdateServing: @escaping (Double) -> Void) {
+        self.fdcId = foodItem.fdcId
+        self.foodName = foodItem.name
+        self.brand = foodItem.brand ?? ""
+        self.mealName = ""
+        self.logDate = Date()
+        self.caloriesPer100g = foodItem.caloriesPer100g
+        self.proteinPer100g = foodItem.proteinPer100g
+        self.carbsPer100g = foodItem.carbsPer100g
+        self.fatPer100g = foodItem.fatPer100g
+        self.saturatedFatPer100g = foodItem.saturatedFatPer100g
+        self.transFatPer100g = foodItem.transFatPer100g
+        self.fiberPer100g = foodItem.fiberPer100g
+        self.sugarPer100g = foodItem.sugarPer100g
+        self.sodiumPer100g = foodItem.sodiumPer100g
+        self.cholesterolPer100g = foodItem.cholesterolPer100g
+        self.calciumPer100g = foodItem.calciumPer100g
+        self.ironPer100g = foodItem.ironPer100g
+        self.vitaminAPer100g = foodItem.vitaminAPer100g
+        self.vitaminCPer100g = foodItem.vitaminCPer100g
+        self.vitaminDPer100g = foodItem.vitaminDPer100g
+        self.initialServingSize = foodItem.servingSize
+        self.servingSizeUnit = foodItem.servingSizeUnit
+        self.onUpdateServing = onUpdateServing
+        self._servingGrams = State(initialValue: servingGrams)
+    }
+
     private var calories: Int { Int((caloriesPer100g * servingGrams) / 100) }
     private var protein: Int { Int((proteinPer100g * servingGrams) / 100) }
     private var carbs: Int { Int((carbsPer100g * servingGrams) / 100) }
@@ -133,12 +161,17 @@ struct AddEntryView: View {
                 .padding(.bottom, 80)
             }
 
-            AddToMealButton(calories: calories) {
-                addToMeal()
+            AddToMealButton(title: onUpdateServing != nil ? "Update Serving" : "Add to Meal", calories: calories) {
+                if let onUpdate = onUpdateServing {
+                    onUpdate(servingGrams)
+                    dismiss()
+                } else {
+                    addToMeal()
+                }
             }
         }
         .background(AppColors.background)
-        .navigationTitle("Add Entry")
+        .navigationTitle(onUpdateServing != nil ? "Edit Serving" : "Add Entry")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
     }
@@ -490,13 +523,14 @@ private extension AddEntryView {
     }
 
     struct AddToMealButton: View {
+        var title: String = "Add to Meal"
         let calories: Int
         let action: () -> Void
 
         var body: some View {
             Button(action: action) {
                 HStack {
-                    Text("Add to Meal")
+                    Text(title)
                         .foregroundColor(.black)
                         .font(.custom(Fonts.interSemiBold, size: FontSize.xl))
 

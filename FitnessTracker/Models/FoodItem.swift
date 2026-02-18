@@ -38,6 +38,9 @@ final class FoodItem {
     @Relationship(deleteRule: .cascade, inverse: \MealEntry.foodItem)
     var mealEntries: [MealEntry] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \CustomMealItem.foodItem)
+    var customMealItems: [CustomMealItem] = []
+
     init(fdcId: Int, name: String, brand: String? = nil, caloriesPer100g: Double, proteinPer100g: Double, carbsPer100g: Double, fatPer100g: Double, saturatedFatPer100g: Double = 0, transFatPer100g: Double = 0, fiberPer100g: Double = 0, sugarPer100g: Double = 0, sodiumPer100g: Double = 0, cholesterolPer100g: Double = 0, calciumPer100g: Double = 0, ironPer100g: Double = 0, vitaminAPer100g: Double = 0, vitaminCPer100g: Double = 0, vitaminDPer100g: Double = 0, servingSize: Double? = nil, servingSizeUnit: String? = nil) {
         self.fdcId = fdcId
         self.name = name

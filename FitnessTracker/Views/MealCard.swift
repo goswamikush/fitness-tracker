@@ -130,7 +130,7 @@ private extension MealCard {
 
         var body: some View {
             VStack(spacing: 0) {
-                ExpandedHeader(mealName: mealName, logDate: logDate, totalCalories: totalCalories, isExpanded: $isExpanded)
+                ExpandedHeader(mealName: mealName, logDate: logDate, entries: entries, totalCalories: totalCalories, isExpanded: $isExpanded)
                     .padding(.bottom, Spacing.md)
 
                 List {
@@ -229,6 +229,12 @@ private extension MealCard {
                             .foregroundColor(AppColors.macroTextColor)
                     }
 
+                    NavigationLink(destination: SaveCustomMealView(mealName: mealName, entries: entries)) {
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: IconSize.lg, weight: .medium))
+                            .foregroundColor(AppColors.macroTextColor)
+                    }
+
                     Button {
                         isExpanded.toggle()
                     } label: {
@@ -244,6 +250,7 @@ private extension MealCard {
     struct ExpandedHeader: View {
         let mealName: String
         let logDate: Date
+        let entries: [MealEntry]
         let totalCalories: Int
         @Binding var isExpanded: Bool
 
@@ -264,6 +271,12 @@ private extension MealCard {
                 HStack(spacing: Spacing.xl) {
                     NavigationLink(destination: AddFoodView(mealName: mealName, logDate: logDate)) {
                         Image(systemName: "plus")
+                            .font(.system(size: IconSize.lg, weight: .medium))
+                            .foregroundColor(AppColors.macroTextColor)
+                    }
+
+                    NavigationLink(destination: SaveCustomMealView(mealName: mealName, entries: entries)) {
+                        Image(systemName: "ellipsis")
                             .font(.system(size: IconSize.lg, weight: .medium))
                             .foregroundColor(AppColors.macroTextColor)
                     }

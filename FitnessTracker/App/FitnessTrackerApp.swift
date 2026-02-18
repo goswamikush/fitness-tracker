@@ -24,6 +24,8 @@ struct FitnessTrackerApp: App {
             WeightEntry.self,
             FoodItem.self,
             MealEntry.self,
+            CustomMeal.self,
+            CustomMealItem.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
