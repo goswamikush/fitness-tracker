@@ -16,6 +16,19 @@ enum DateRange: String, CaseIterable {
     case sixMonths = "6M"
     case oneYear = "1Y"
     case max = "MAX"
+
+    var cutoffDate: Date? {
+        let calendar = Calendar.current
+        let today = Date()
+        switch self {
+        case .oneWeek: return calendar.date(byAdding: .day, value: -7, to: today)
+        case .oneMonth: return calendar.date(byAdding: .month, value: -1, to: today)
+        case .threeMonths: return calendar.date(byAdding: .month, value: -3, to: today)
+        case .sixMonths: return calendar.date(byAdding: .month, value: -6, to: today)
+        case .oneYear: return calendar.date(byAdding: .year, value: -1, to: today)
+        case .max: return nil
+        }
+    }
 }
 
 struct BodyWeightView: View {
@@ -23,6 +36,11 @@ struct BodyWeightView: View {
     @Query(sort: \WeightEntry.date) private var entries: [WeightEntry]
     @State private var selectedRange: DateRange = .sixMonths
     @State private var selectedEntry: WeightEntry?
+
+    private var filteredEntries: [WeightEntry] {
+        guard let cutoff = selectedRange.cutoffDate else { return entries }
+        return entries.filter { $0.date >= cutoff }
+    }
 
     var body: some View {
         ZStack {
@@ -34,8 +52,8 @@ struct BodyWeightView: View {
                     Header()
                     WeightSummaryCards(entries: entries)
                     DateRangePicker(selectedRange: $selectedRange)
-                    WeightChart(entries: entries)
-                    HistorySection(entries: entries, onSelect: { selectedEntry = $0 })
+                    WeightChart(entries: filteredEntries, selectedRange: selectedRange)
+                    HistorySection(entries: filteredEntries, onSelect: { selectedEntry = $0 })
                 }
                 .padding(.horizontal)
             }
@@ -257,6 +275,11 @@ private extension BodyWeightView {
 
     struct WeightChart: View {
         let entries: [WeightEntry]
+        let selectedRange: DateRange
+
+        private var showWeeklyAverages: Bool {
+            selectedRange != .oneWeek
+        }
 
         private var weeklyAverages: [WeeklyAverage] {
             let calendar = Calendar.current
@@ -271,11 +294,13 @@ private extension BodyWeightView {
         }
 
         private var yMin: Double {
-            let allValues = entries.map(\.weight) + weeklyAverages.map(\.average)
+            var allValues = entries.map(\.weight)
+            if showWeeklyAverages { allValues += weeklyAverages.map(\.average) }
             return (allValues.min() ?? 78) - 1.0
         }
         private var yMax: Double {
-            let allValues = entries.map(\.weight) + weeklyAverages.map(\.average)
+            var allValues = entries.map(\.weight)
+            if showWeeklyAverages { allValues += weeklyAverages.map(\.average) }
             return (allValues.max() ?? 84) + 0.5
         }
 
@@ -288,12 +313,14 @@ private extension BodyWeightView {
                         series: .value("Series", "Daily")
                     )
                     .foregroundStyle(MacroColors.carbs.opacity(0.35))
-                    .interpolationMethod(.catmullRom)
+                    .interpolationMethod(.monotone)
                     .lineStyle(StrokeStyle(lineWidth: 1))
 
                     AreaMark(
                         x: .value("Date", entry.date),
-                        y: .value("Weight", entry.weight)
+                        yStart: .value("Min", yMin),
+                        yEnd: .value("Weight", entry.weight),
+                        series: .value("Series", "Daily")
                     )
                     .foregroundStyle(
                         LinearGradient(
@@ -302,25 +329,27 @@ private extension BodyWeightView {
                             endPoint: .bottom
                         )
                     )
-                    .interpolationMethod(.catmullRom)
+                    .interpolationMethod(.monotone)
                 }
 
-                ForEach(weeklyAverages) { avg in
-                    LineMark(
-                        x: .value("Date", avg.date),
-                        y: .value("Weight", avg.average),
-                        series: .value("Series", "Weekly Avg")
-                    )
-                    .foregroundStyle(MacroColors.carbs)
-                    .interpolationMethod(.catmullRom)
-                    .lineStyle(StrokeStyle(lineWidth: 3))
+                if showWeeklyAverages {
+                    ForEach(weeklyAverages) { avg in
+                        LineMark(
+                            x: .value("Date", avg.date),
+                            y: .value("Weight", avg.average),
+                            series: .value("Series", "Weekly Avg")
+                        )
+                        .foregroundStyle(MacroColors.carbs)
+                        .interpolationMethod(.monotone)
+                        .lineStyle(StrokeStyle(lineWidth: 3))
 
-                    PointMark(
-                        x: .value("Date", avg.date),
-                        y: .value("Weight", avg.average)
-                    )
-                    .foregroundStyle(MacroColors.carbs)
-                    .symbolSize(20)
+                        PointMark(
+                            x: .value("Date", avg.date),
+                            y: .value("Weight", avg.average)
+                        )
+                        .foregroundStyle(MacroColors.carbs)
+                        .symbolSize(20)
+                    }
                 }
             }
             .chartYScale(domain: yMin...yMax)
