@@ -6,17 +6,45 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct AddFoodView: View {
     let mealName: String
+    @State private var searchText = ""
+    @State private var searchResults: [USDAFoodResult] = []
+    @State private var isSearching = false
+    @State private var searchTask: Task<Void, Never>?
+    @Query(sort: \MealEntry.date, order: .reverse) private var allEntries: [MealEntry]
+
+    private var recentFoods: [FoodItem] {
+        var seen = Set<Int>()
+        var items: [FoodItem] = []
+        for entry in allEntries {
+            guard let food = entry.foodItem else { continue }
+            if seen.insert(food.fdcId).inserted {
+                items.append(food)
+            }
+            if items.count >= 5 { break }
+        }
+        return items
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: Spacing.xl) {
-                SearchBar()
+                SearchBar(searchText: $searchText)
                 ScanBarcodeButton()
-                RecentSection()
-                YesterdaySection()
+
+                if isSearching {
+                    SwiftUI.ProgressView()
+                        .tint(.white)
+                        .padding(.vertical, Spacing.xxl)
+                } else if !searchText.isEmpty {
+                    SearchResultsSection(results: searchResults, mealName: mealName)
+                } else {
+                    RecentSection(recentFoods: recentFoods, mealName: mealName)
+                    YesterdaySection()
+                }
             }
             .padding()
         }
@@ -24,6 +52,33 @@ struct AddFoodView: View {
         .navigationTitle("Add to \(mealName)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .onChange(of: searchText) { _, newValue in
+            searchTask?.cancel()
+            if newValue.isEmpty {
+                searchResults = []
+                isSearching = false
+                return
+            }
+            isSearching = true
+            searchTask = Task {
+                try? await Task.sleep(nanoseconds: 400_000_000)
+                guard !Task.isCancelled else { return }
+                do {
+                    let results = try await USDAService.shared.searchFoods(query: newValue)
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        searchResults = results
+                        isSearching = false
+                    }
+                } catch {
+                    guard !Task.isCancelled else { return }
+                    await MainActor.run {
+                        searchResults = []
+                        isSearching = false
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -32,14 +87,24 @@ struct AddFoodView: View {
 private extension AddFoodView {
 
     struct SearchBar: View {
+        @Binding var searchText: String
+
         var body: some View {
             HStack(spacing: Spacing.md) {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(AppColors.macroTextColor)
-                Text("Search for a food...")
-                    .foregroundColor(AppColors.macroTextColor)
+                TextField("Search for a food...", text: $searchText)
+                    .foregroundColor(.white)
                     .font(.custom(Fonts.interRegular, size: FontSize.lg))
-                Spacer()
+                    .autocorrectionDisabled()
+                if !searchText.isEmpty {
+                    Button {
+                        searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(AppColors.macroTextColor)
+                    }
+                }
             }
             .padding()
             .background(
@@ -99,44 +164,104 @@ private extension AddFoodView {
         }
     }
 
-    struct RecentFoodRow: View {
-        let brand: String
-        let name: String
-        let caloriesInt: Int
-        let proteinInt: Int
-        let carbsInt: Int
-        let fatsInt: Int
-        let serving: String
+    struct SearchResultRow: View {
+        let result: USDAFoodResult
+        let mealName: String
 
         var body: some View {
-            NavigationLink(destination: AddEntryView(
-                brand: brand,
-                name: name,
-                servingSize: serving,
-                calories: caloriesInt,
-                protein: proteinInt,
-                carbs: carbsInt,
-                fat: fatsInt
-            )) {
+            NavigationLink(destination: AddEntryView(usdaResult: result, mealName: mealName)) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text(name)
+                    Text(result.name.capitalized)
                         .foregroundColor(.white)
                         .font(.custom(Fonts.interSemiBold, size: FontSize.lg))
+                        .lineLimit(2)
+
+                    if let brand = result.brand {
+                        Text(brand)
+                            .foregroundColor(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                    }
 
                     HStack(spacing: Spacing.sm) {
-                        Text("\(caloriesInt) kcal")
+                        Text("\(Int(result.caloriesPer100g)) kcal")
                             .foregroundColor(AppColors.macroTextColor)
                             .font(.custom(Fonts.interRegular, size: FontSize.xs))
 
-                        MacroBadge(color: MacroColors.protein, value: "\(proteinInt)p")
-                        MacroBadge(color: MacroColors.carbs, value: "\(carbsInt)c")
-                        MacroBadge(color: MacroColors.fats, value: "\(fatsInt)f")
+                        MacroBadge(color: MacroColors.protein, value: "\(Int(result.proteinPer100g))p")
+                        MacroBadge(color: MacroColors.carbs, value: "\(Int(result.carbsPer100g))c")
+                        MacroBadge(color: MacroColors.fats, value: "\(Int(result.fatPer100g))f")
 
                         Text("|")
                             .foregroundColor(AppColors.macroTextColor)
                             .font(.custom(Fonts.interRegular, size: FontSize.xs))
 
-                        Text(serving)
+                        Text("per 100g")
+                            .foregroundColor(AppColors.macroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: CornerRadius.sm)
+                                .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                        )
+                )
+            }
+        }
+    }
+
+    struct SearchResultsSection: View {
+        let results: [USDAFoodResult]
+        let mealName: String
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                SectionHeader(title: "SEARCH RESULTS")
+
+                if results.isEmpty {
+                    Text("No results found")
+                        .foregroundColor(AppColors.lightMacroTextColor)
+                        .font(.custom(Fonts.interRegular, size: FontSize.md))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Spacing.xxl)
+                } else {
+                    ForEach(results) { result in
+                        SearchResultRow(result: result, mealName: mealName)
+                    }
+                }
+            }
+        }
+    }
+
+    struct RecentFoodRow: View {
+        let food: FoodItem
+        let mealName: String
+
+        var body: some View {
+            NavigationLink(destination: AddEntryView(foodItem: food, mealName: mealName)) {
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Text(food.name.capitalized)
+                        .foregroundColor(.white)
+                        .font(.custom(Fonts.interSemiBold, size: FontSize.lg))
+
+                    HStack(spacing: Spacing.sm) {
+                        Text("\(Int(food.caloriesPer100g)) kcal")
+                            .foregroundColor(AppColors.macroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.xs))
+
+                        MacroBadge(color: MacroColors.protein, value: "\(Int(food.proteinPer100g))p")
+                        MacroBadge(color: MacroColors.carbs, value: "\(Int(food.carbsPer100g))c")
+                        MacroBadge(color: MacroColors.fats, value: "\(Int(food.fatPer100g))f")
+
+                        Text("|")
+                            .foregroundColor(AppColors.macroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.xs))
+
+                        Text("per 100g")
                             .foregroundColor(AppColors.macroTextColor)
                             .font(.custom(Fonts.interRegular, size: FontSize.xs))
                     }
@@ -156,13 +281,23 @@ private extension AddFoodView {
     }
 
     struct RecentSection: View {
+        let recentFoods: [FoodItem]
+        let mealName: String
+
         var body: some View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 SectionHeader(title: "RECENT")
 
-                RecentFoodRow(brand: "Blue Diamond", name: "Almonds", caloriesInt: 164, proteinInt: 6, carbsInt: 6, fatsInt: 14, serving: "1 oz")
-                RecentFoodRow(brand: "Nature Valley", name: "Protein Bar", caloriesInt: 200, proteinInt: 20, carbsInt: 22, fatsInt: 7, serving: "1 bar")
-                RecentFoodRow(brand: "Daisy", name: "Cottage Cheese", caloriesInt: 110, proteinInt: 12, carbsInt: 5, fatsInt: 4, serving: "1/2 cup")
+                if recentFoods.isEmpty {
+                    Text("No recent foods")
+                        .foregroundColor(AppColors.lightMacroTextColor)
+                        .font(.custom(Fonts.interRegular, size: FontSize.md))
+                        .padding(.vertical, Spacing.lg)
+                } else {
+                    ForEach(recentFoods) { food in
+                        RecentFoodRow(food: food, mealName: mealName)
+                    }
+                }
             }
         }
     }

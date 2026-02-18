@@ -6,11 +6,32 @@
 import SwiftUI
 
 struct DashboardHeaderView: View {
+    var consumedCalories: Int = 0
+    var consumedProtein: Int = 0
+    var consumedCarbs: Int = 0
+    var consumedFat: Int = 0
+
+    private let calorieGoal = 2400
+    private let proteinGoal = 180.0
+    private let carbsGoal = 250.0
+    private let fatGoal = 70.0
+
+    private var remaining: Int {
+        max(calorieGoal - consumedCalories, 0)
+    }
+
     var body: some View {
         VStack(spacing: 20) {
             DateBar()
-            CaloriesSection()
-            MacroRingsSection()
+            CaloriesSection(consumed: consumedCalories, goal: calorieGoal, remaining: remaining)
+            MacroRingsSection(
+                protein: Double(consumedProtein),
+                carbs: Double(consumedCarbs),
+                fat: Double(consumedFat),
+                proteinGoal: proteinGoal,
+                carbsGoal: carbsGoal,
+                fatGoal: fatGoal
+            )
         }
     }
 }
@@ -42,27 +63,31 @@ private extension DashboardHeaderView {
     }
 
     struct CaloriesSection: View {
+        let consumed: Int
+        let goal: Int
+        let remaining: Int
+
         var body: some View {
             VStack(spacing: 8) {
                 Text("CALORIES REMAINING")
                     .foregroundStyle(AppColors.lightMacroTextColor)
                     .font(.custom(Fonts.interMedium, size: 11))
 
-                Text("1285")
+                Text("\(remaining)")
                     .foregroundStyle(.white)
                     .font(.custom(Fonts.outfitSemiBold, size: 30))
                     .padding(.bottom, 6)
 
-                CalorieProgressBar(consumed: 1285, goal: 2400)
+                CalorieProgressBar(consumed: Double(consumed), goal: Double(goal))
 
                 HStack {
-                    Text("0")
+                    Text("\(consumed)")
                         .foregroundStyle(AppColors.lightMacroTextColor)
                         .font(.custom(Fonts.interMedium, size: 11))
 
                     Spacer()
 
-                    Text("2400 kcal goal")
+                    Text("\(goal) kcal goal")
                         .foregroundStyle(AppColors.lightMacroTextColor)
                         .font(.custom(Fonts.interMedium, size: 11))
                 }
@@ -101,12 +126,19 @@ private extension DashboardHeaderView {
     }
 
     struct MacroRingsSection: View {
+        let protein: Double
+        let carbs: Double
+        let fat: Double
+        let proteinGoal: Double
+        let carbsGoal: Double
+        let fatGoal: Double
+
         var body: some View {
             VStack(spacing: Spacing.xl) {
                 HStack(spacing: 50) {
-                    MacroRing(current: 97, goal: 180, color: MacroColors.protein, label: "Protein")
-                    MacroRing(current: 108, goal: 250, color: MacroColors.carbs, label: "Carbs")
-                    MacroRing(current: 27, goal: 70, color: MacroColors.fats, label: "Fat")
+                    MacroRing(current: protein, goal: proteinGoal, color: MacroColors.protein, label: "Protein")
+                    MacroRing(current: carbs, goal: carbsGoal, color: MacroColors.carbs, label: "Carbs")
+                    MacroRing(current: fat, goal: fatGoal, color: MacroColors.fats, label: "Fat")
                 }
 
                 NavigationLink(destination: NutritionAnalysisView()) {

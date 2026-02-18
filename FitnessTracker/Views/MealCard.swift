@@ -8,17 +8,36 @@
 import SwiftUI
 
 struct MealCard: View {
-    var isEmpty: Bool = false
+    let mealName: String
+    let entries: [MealEntry]
     @State private var isExpanded = true
+
+    private var isEmpty: Bool { entries.isEmpty }
+
+    private var totalCalories: Int {
+        Int(entries.reduce(0) { $0 + $1.calories })
+    }
+
+    private var totalProtein: Int {
+        Int(entries.reduce(0) { $0 + $1.protein })
+    }
+
+    private var totalCarbs: Int {
+        Int(entries.reduce(0) { $0 + $1.carbs })
+    }
+
+    private var totalFat: Int {
+        Int(entries.reduce(0) { $0 + $1.fat })
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
             if isEmpty {
-                EmptyContent(isExpanded: $isExpanded)
+                EmptyContent(mealName: mealName, isExpanded: $isExpanded)
             } else if isExpanded {
-                ExpandedContent(isExpanded: $isExpanded)
+                ExpandedContent(mealName: mealName, entries: entries, totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat, isExpanded: $isExpanded)
             } else {
-                CollapsedContent(isExpanded: $isExpanded)
+                CollapsedContent(mealName: mealName, entries: entries, totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat, isExpanded: $isExpanded)
             }
         }
         .padding()
@@ -44,13 +63,14 @@ struct MealCard: View {
 private extension MealCard {
 
     struct EmptyContent: View {
+        let mealName: String
         @Binding var isExpanded: Bool
 
         var body: some View {
             VStack(spacing: Spacing.xl) {
                 HStack {
                     VStack(alignment: .leading, spacing: Spacing.sm) {
-                        Text("Dinner")
+                        Text(mealName)
                             .foregroundStyle(.white)
                             .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
                         Text("No food logged")
@@ -61,7 +81,7 @@ private extension MealCard {
                     Spacer()
 
                     HStack(spacing: Spacing.xl) {
-                        NavigationLink(destination: AddFoodView(mealName: "Dinner")) {
+                        NavigationLink(destination: AddFoodView(mealName: mealName)) {
                             Image(systemName: "plus")
                                 .font(.system(size: IconSize.lg, weight: .medium))
                                 .foregroundColor(AppColors.macroTextColor)
@@ -77,7 +97,7 @@ private extension MealCard {
                     }
                 }
 
-                NavigationLink(destination: AddFoodView(mealName: "Dinner")) {
+                NavigationLink(destination: AddFoodView(mealName: mealName)) {
                     Text("Tap + to add food")
                         .foregroundStyle(AppColors.lightMacroTextColor)
                         .font(.custom(Fonts.interRegular, size: FontSize.md))
@@ -94,28 +114,48 @@ private extension MealCard {
     }
 
     struct ExpandedContent: View {
+        let mealName: String
+        let entries: [MealEntry]
+        let totalCalories: Int
+        let totalProtein: Int
+        let totalCarbs: Int
+        let totalFat: Int
         @Binding var isExpanded: Bool
 
         var body: some View {
             VStack(spacing: Spacing.xxl) {
-                ExpandedHeader(isExpanded: $isExpanded)
-                FoodItem()
-                FoodItem()
-                Footer()
+                ExpandedHeader(mealName: mealName, totalCalories: totalCalories, isExpanded: $isExpanded)
+                ForEach(entries) { entry in
+                    FoodItemRow(
+                        name: entry.foodItem?.name ?? "Unknown",
+                        calories: Int(entry.calories),
+                        protein: Int(entry.protein),
+                        carbs: Int(entry.carbs),
+                        fat: Int(entry.fat),
+                        servingGrams: Int(entry.servingGrams)
+                    )
+                }
+                Footer(totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat)
             }
         }
     }
 
     struct CollapsedContent: View {
+        let mealName: String
+        let entries: [MealEntry]
+        let totalCalories: Int
+        let totalProtein: Int
+        let totalCarbs: Int
+        let totalFat: Int
         @Binding var isExpanded: Bool
 
         var body: some View {
             HStack {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text("Lunch")
+                    Text(mealName)
                         .foregroundStyle(.white)
                         .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
-                    Text("2 items")
+                    Text("\(entries.count) item\(entries.count == 1 ? "" : "s")")
                         .foregroundStyle(AppColors.lightMacroTextColor)
                         .font(.custom(Fonts.interRegular, size: FontSize.sm))
                 }
@@ -127,7 +167,7 @@ private extension MealCard {
                         Circle()
                             .fill(MacroColors.protein)
                             .frame(width: IconSize.md, height: IconSize.md)
-                        Text("36p")
+                        Text("\(totalProtein)p")
                             .foregroundStyle(AppColors.lightMacroTextColor)
                             .font(.custom(Fonts.interRegular, size: FontSize.sm))
                     }
@@ -136,7 +176,7 @@ private extension MealCard {
                         Circle()
                             .fill(MacroColors.carbs)
                             .frame(width: IconSize.md, height: IconSize.md)
-                        Text("63c")
+                        Text("\(totalCarbs)c")
                             .foregroundStyle(AppColors.lightMacroTextColor)
                             .font(.custom(Fonts.interRegular, size: FontSize.sm))
                     }
@@ -145,16 +185,16 @@ private extension MealCard {
                         Circle()
                             .fill(MacroColors.fats)
                             .frame(width: IconSize.md, height: IconSize.md)
-                        Text("7f")
+                        Text("\(totalFat)f")
                             .foregroundStyle(AppColors.lightMacroTextColor)
                             .font(.custom(Fonts.interRegular, size: FontSize.sm))
                     }
 
-                    Text("470 kcal")
+                    Text("\(totalCalories) kcal")
                         .foregroundStyle(AppColors.lightMacroTextColor)
                         .font(.custom(Fonts.interRegular, size: FontSize.sm))
 
-                    NavigationLink(destination: AddFoodView(mealName: "Lunch")) {
+                    NavigationLink(destination: AddFoodView(mealName: mealName)) {
                         Image(systemName: "plus")
                             .font(.system(size: IconSize.lg, weight: .medium))
                             .foregroundColor(AppColors.macroTextColor)
@@ -173,16 +213,18 @@ private extension MealCard {
     }
 
     struct ExpandedHeader: View {
+        let mealName: String
+        let totalCalories: Int
         @Binding var isExpanded: Bool
 
         var body: some View {
             HStack {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text("Lunch")
+                    Text(mealName)
                         .foregroundStyle(.white)
                         .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
 
-                    Text("545 kcal")
+                    Text("\(totalCalories) kcal")
                         .foregroundStyle(AppColors.macroTextColor)
                         .font(.custom(Fonts.interMedium, size: FontSize.sm))
                 }
@@ -190,7 +232,7 @@ private extension MealCard {
                 Spacer()
 
                 HStack(spacing: Spacing.xl) {
-                    NavigationLink(destination: AddFoodView(mealName: "Lunch")) {
+                    NavigationLink(destination: AddFoodView(mealName: mealName)) {
                         Image(systemName: "plus")
                             .font(.system(size: IconSize.lg, weight: .medium))
                             .foregroundColor(AppColors.macroTextColor)
@@ -209,6 +251,11 @@ private extension MealCard {
     }
 
     struct Footer: View {
+        let totalCalories: Int
+        let totalProtein: Int
+        let totalCarbs: Int
+        let totalFat: Int
+
         var body: some View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 Divider()
@@ -219,7 +266,7 @@ private extension MealCard {
                             Circle()
                                 .fill(MacroColors.protein)
                                 .frame(width: IconSize.md, height: IconSize.md)
-                            Text("45p")
+                            Text("\(totalProtein)p")
                                 .foregroundStyle(AppColors.lightMacroTextColor)
                                 .font(.custom(Fonts.interRegular, size: FontSize.sm))
                         }
@@ -228,7 +275,7 @@ private extension MealCard {
                             Circle()
                                 .fill(MacroColors.carbs)
                                 .frame(width: IconSize.md, height: IconSize.md)
-                            Text("12c")
+                            Text("\(totalCarbs)c")
                                 .foregroundStyle(AppColors.lightMacroTextColor)
                                 .font(.custom(Fonts.interRegular, size: FontSize.sm))
                         }
@@ -237,7 +284,7 @@ private extension MealCard {
                             Circle()
                                 .fill(MacroColors.fats)
                                 .frame(width: IconSize.md, height: IconSize.md)
-                            Text("20f")
+                            Text("\(totalFat)f")
                                 .foregroundStyle(AppColors.lightMacroTextColor)
                                 .font(.custom(Fonts.interRegular, size: FontSize.sm))
                         }
@@ -245,7 +292,7 @@ private extension MealCard {
 
                     Spacer()
 
-                    Text("900 cal")
+                    Text("\(totalCalories) cal")
                         .foregroundStyle(AppColors.lightMacroTextColor)
                         .font(.custom(Fonts.interRegular, size: FontSize.sm))
                 }
@@ -261,7 +308,7 @@ private extension MealCard {
 
         NavigationStack {
             VStack(alignment: .leading, spacing: 8) {
-                MealCard(isEmpty: true)
+                MealCard(mealName: "Dinner", entries: [])
             }
             .padding()
         }

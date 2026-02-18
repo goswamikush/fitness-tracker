@@ -6,24 +6,73 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct AddEntryView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    let fdcId: Int
+    let foodName: String
     let brand: String
-    let name: String
-    let servingSize: String
-    let calories: Int
-    let protein: Int
-    let carbs: Int
-    let fat: Int
+    let mealName: String
+    let caloriesPer100g: Double
+    let proteinPer100g: Double
+    let carbsPer100g: Double
+    let fatPer100g: Double
+    let initialServingSize: Double?
+    let servingSizeUnit: String?
+
+    @State private var servingGrams: Double
+
+    init(usdaResult: USDAFoodResult, mealName: String) {
+        self.fdcId = usdaResult.id
+        self.foodName = usdaResult.name
+        self.brand = usdaResult.brand ?? ""
+        self.mealName = mealName
+        self.caloriesPer100g = usdaResult.caloriesPer100g
+        self.proteinPer100g = usdaResult.proteinPer100g
+        self.carbsPer100g = usdaResult.carbsPer100g
+        self.fatPer100g = usdaResult.fatPer100g
+        self.initialServingSize = usdaResult.servingSize
+        self.servingSizeUnit = usdaResult.servingSizeUnit
+        self._servingGrams = State(initialValue: usdaResult.servingSize ?? 100)
+    }
+
+    init(foodItem: FoodItem, mealName: String) {
+        self.fdcId = foodItem.fdcId
+        self.foodName = foodItem.name
+        self.brand = foodItem.brand ?? ""
+        self.mealName = mealName
+        self.caloriesPer100g = foodItem.caloriesPer100g
+        self.proteinPer100g = foodItem.proteinPer100g
+        self.carbsPer100g = foodItem.carbsPer100g
+        self.fatPer100g = foodItem.fatPer100g
+        self.initialServingSize = foodItem.servingSize
+        self.servingSizeUnit = foodItem.servingSizeUnit
+        self._servingGrams = State(initialValue: foodItem.servingSize ?? 100)
+    }
+
+    private var calories: Int { Int((caloriesPer100g * servingGrams) / 100) }
+    private var protein: Int { Int((proteinPer100g * servingGrams) / 100) }
+    private var carbs: Int { Int((carbsPer100g * servingGrams) / 100) }
+    private var fat: Int { Int((fatPer100g * servingGrams) / 100) }
+
+    private var servingDisplay: String {
+        if let unit = servingSizeUnit, !unit.isEmpty {
+            return "\(Int(servingGrams))\(unit)"
+        }
+        return "\(Int(servingGrams))g"
+    }
 
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
                 VStack(spacing: Spacing.xl) {
-                    FoodHeader(brand: brand, name: name, servingSize: servingSize)
-                    ServingRow()
+                    FoodHeader(brand: brand, name: foodName, servingSize: servingDisplay)
+                    ServingRow(servingGrams: $servingGrams)
                     CalculateByDivider()
-                    TargetCaloriesRow(calories: calories)
+                    TargetCaloriesRow(servingGrams: $servingGrams, caloriesPer100g: caloriesPer100g)
                     MacroRingsRow(protein: protein, carbs: carbs, fat: fat)
                     MicronutrientsSection()
                 }
@@ -31,12 +80,47 @@ struct AddEntryView: View {
                 .padding(.bottom, 80)
             }
 
-            AddToMealButton(calories: calories)
+            AddToMealButton(calories: calories) {
+                addToMeal()
+            }
         }
         .background(AppColors.background)
         .navigationTitle("Add Entry")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
+    }
+
+    private func addToMeal() {
+        let searchId = fdcId
+        let descriptor = FetchDescriptor<FoodItem>(predicate: #Predicate { $0.fdcId == searchId })
+        let existing = try? modelContext.fetch(descriptor)
+        let food: FoodItem
+        if let found = existing?.first {
+            food = found
+        } else {
+            food = FoodItem(
+                fdcId: fdcId,
+                name: foodName,
+                brand: brand.isEmpty ? nil : brand,
+                caloriesPer100g: caloriesPer100g,
+                proteinPer100g: proteinPer100g,
+                carbsPer100g: carbsPer100g,
+                fatPer100g: fatPer100g,
+                servingSize: initialServingSize,
+                servingSizeUnit: servingSizeUnit
+            )
+            modelContext.insert(food)
+        }
+
+        let entry = MealEntry(
+            date: Date(),
+            mealType: mealName,
+            servingGrams: servingGrams,
+            foodItem: food
+        )
+        modelContext.insert(entry)
+
+        dismiss()
     }
 }
 
@@ -51,14 +135,17 @@ private extension AddEntryView {
 
         var body: some View {
             VStack(spacing: Spacing.md) {
-                Text(brand.uppercased())
-                    .foregroundColor(AppColors.macroTextColor)
-                    .font(.custom(Fonts.interMedium, size: FontSize.sm))
-                    .tracking(1)
+                if !brand.isEmpty {
+                    Text(brand.uppercased())
+                        .foregroundColor(AppColors.macroTextColor)
+                        .font(.custom(Fonts.interMedium, size: FontSize.sm))
+                        .tracking(1)
+                }
 
-                Text(name)
+                Text(name.capitalized)
                     .foregroundColor(.white)
                     .font(.custom(Fonts.outfitSemiBold, size: 24))
+                    .multilineTextAlignment(.center)
 
                 Text("\(servingSize) per serving")
                     .foregroundColor(AppColors.macroTextColor)
@@ -83,32 +170,46 @@ private extension AddEntryView {
     }
 
     struct ServingRow: View {
+        @Binding var servingGrams: Double
+        @State private var servingText: String = ""
+
         var body: some View {
             HStack(spacing: 0) {
-                Text("1")
+                TextField("100", text: $servingText)
                     .foregroundColor(.white)
                     .font(.custom(Fonts.interMedium, size: FontSize.lg))
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
+                    .onChange(of: servingText) { _, newValue in
+                        if let val = Double(newValue), val > 0 {
+                            servingGrams = val
+                        }
+                    }
 
                 Divider()
                     .frame(height: 24)
                     .overlay(Color.white.opacity(CardStyle.borderOpacity))
 
-                HStack(spacing: Spacing.sm) {
-                    Text("Srv")
-                        .foregroundColor(AppColors.macroTextColor)
-                        .font(.custom(Fonts.interMedium, size: FontSize.lg))
-                    Image(systemName: "chevron.down")
-                        .foregroundColor(AppColors.macroTextColor)
-                        .font(.system(size: 10))
-                }
-                .frame(width: 80)
+                Text("g")
+                    .foregroundColor(AppColors.macroTextColor)
+                    .font(.custom(Fonts.interMedium, size: FontSize.lg))
+                    .frame(width: 80)
             }
             .padding(.vertical, Spacing.lg)
             .background(
                 RoundedRectangle(cornerRadius: CornerRadius.sm)
                     .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
             )
+            .onAppear {
+                servingText = "\(Int(servingGrams))"
+            }
+            .onChange(of: servingGrams) { _, newValue in
+                let newText = "\(Int(newValue))"
+                if newText != servingText {
+                    servingText = newText
+                }
+            }
         }
     }
 
@@ -132,7 +233,13 @@ private extension AddEntryView {
     }
 
     struct TargetCaloriesRow: View {
-        let calories: Int
+        @Binding var servingGrams: Double
+        let caloriesPer100g: Double
+        @State private var calorieText: String = ""
+
+        private var calories: Int {
+            Int((caloriesPer100g * servingGrams) / 100)
+        }
 
         var body: some View {
             HStack {
@@ -140,9 +247,17 @@ private extension AddEntryView {
                     .foregroundColor(AppColors.macroTextColor)
                     .font(.custom(Fonts.interRegular, size: FontSize.lg))
                 Spacer()
-                Text("\(calories)")
-                    .foregroundColor(AppColors.macroTextColor)
-                    .font(.custom(Fonts.interRegular, size: FontSize.lg))
+                TextField("0", text: $calorieText)
+                    .foregroundColor(.white)
+                    .font(.custom(Fonts.interMedium, size: FontSize.lg))
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 70)
+                    .onChange(of: calorieText) { _, newValue in
+                        if let target = Double(newValue), target > 0, caloriesPer100g > 0 {
+                            servingGrams = (target / caloriesPer100g) * 100
+                        }
+                    }
                 Text("kcal")
                     .foregroundColor(AppColors.lightMacroTextColor)
                     .font(.custom(Fonts.interRegular, size: FontSize.lg))
@@ -152,6 +267,12 @@ private extension AddEntryView {
                 RoundedRectangle(cornerRadius: CornerRadius.sm)
                     .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
             )
+            .onAppear {
+                calorieText = "\(calories)"
+            }
+            .onChange(of: servingGrams) { _, _ in
+                calorieText = "\(calories)"
+            }
         }
     }
 
@@ -239,28 +360,31 @@ private extension AddEntryView {
 
     struct AddToMealButton: View {
         let calories: Int
+        let action: () -> Void
 
         var body: some View {
-            HStack {
-                Text("Add to Meal")
-                    .foregroundColor(.black)
-                    .font(.custom(Fonts.interSemiBold, size: FontSize.xl))
-
-                Spacer()
-
-                HStack(spacing: Spacing.sm) {
-                    Text("\(calories)")
+            Button(action: action) {
+                HStack {
+                    Text("Add to Meal")
                         .foregroundColor(.black)
-                        .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
-                    Text("kcal")
-                        .foregroundColor(.black.opacity(0.7))
-                        .font(.custom(Fonts.interRegular, size: FontSize.lg))
+                        .font(.custom(Fonts.interSemiBold, size: FontSize.xl))
+
+                    Spacer()
+
+                    HStack(spacing: Spacing.sm) {
+                        Text("\(calories)")
+                            .foregroundColor(.black)
+                            .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
+                        Text("kcal")
+                            .foregroundColor(.black.opacity(0.7))
+                            .font(.custom(Fonts.interRegular, size: FontSize.lg))
+                    }
                 }
+                .padding()
+                .background(MacroColors.carbs)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                .padding()
             }
-            .padding()
-            .background(MacroColors.carbs)
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-            .padding()
         }
     }
 }
@@ -268,13 +392,18 @@ private extension AddEntryView {
 #Preview {
     NavigationStack {
         AddEntryView(
-            brand: "Blue Diamond",
-            name: "Almonds",
-            servingSize: "1 oz",
-            calories: 164,
-            protein: 6,
-            carbs: 6,
-            fat: 14
+            usdaResult: USDAFoodResult(
+                id: 123,
+                name: "Almonds",
+                brand: "Blue Diamond",
+                caloriesPer100g: 579,
+                proteinPer100g: 21,
+                carbsPer100g: 22,
+                fatPer100g: 50,
+                servingSize: 28,
+                servingSizeUnit: "g"
+            ),
+            mealName: "Lunch"
         )
     }
 }

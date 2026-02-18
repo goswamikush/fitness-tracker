@@ -1,26 +1,30 @@
 //
-//  FoodItem.swift
+//  FoodItemRow.swift
 //  FitnessTracker
-//
-//  Created by Kush Goswami on 2/14/26.
 //
 
 import SwiftUI
 
-struct FoodItem: View {
+struct FoodItemRow: View {
+    let name: String
+    let calories: Int
+    let protein: Int
+    let carbs: Int
+    let fat: Int
+    let servingGrams: Int
 
     var body: some View {
         VStack {
             HStack {
                 VStack(alignment: .leading) {
-                    Text("Grilled Chicken Salad")
+                    Text(name)
                         .foregroundStyle(.white)
                         .font(.custom(Fonts.interMedium, size: FontSize.lg))
 
                     HStack() {
-                        MacroBadge(color: MacroColors.protein, value: "45p")
-                        MacroBadge(color: MacroColors.carbs, value: "12c")
-                        MacroBadge(color: MacroColors.fats, value: "20f")
+                        MacroBadge(color: MacroColors.protein, value: "\(protein)p")
+                        MacroBadge(color: MacroColors.carbs, value: "\(carbs)c")
+                        MacroBadge(color: MacroColors.fats, value: "\(fat)f")
 
                         Divider()
                             .frame(height: FontSize.lg)
@@ -31,7 +35,7 @@ struct FoodItem: View {
                             Circle()
                                 .fill(AppColors.macroTextColor)
                                 .frame(width: IconSize.xs, height: IconSize.xs)
-                            Text("256g")
+                            Text("\(servingGrams)g")
                                 .foregroundStyle(AppColors.macroTextColor.opacity(0.6))
                                 .font(.custom(Fonts.interRegular, size: FontSize.xs))
                         }
@@ -40,7 +44,7 @@ struct FoodItem: View {
 
                 Spacer()
 
-                Text("450 cal")
+                Text("\(calories) cal")
                     .foregroundStyle(.white)
                     .font(.custom(Fonts.interRegular, size: FontSize.md))
             }
@@ -50,7 +54,7 @@ struct FoodItem: View {
 
 // MARK: - Subcomponents
 
-private extension FoodItem {
+private extension FoodItemRow {
 
     struct MacroBadge: View {
         let color: Color
@@ -75,7 +79,7 @@ private extension FoodItem {
             .ignoresSafeArea()
 
         VStack(alignment: .leading, spacing: 8) {
-            FoodItem()
+            FoodItemRow(name: "Grilled Chicken Salad", calories: 450, protein: 45, carbs: 12, fat: 20, servingGrams: 256)
         }
         .padding()
     }
