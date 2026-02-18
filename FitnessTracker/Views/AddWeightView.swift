@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 enum WeightUnit: String, CaseIterable {
     case kg = "kg"
@@ -13,15 +14,22 @@ enum WeightUnit: String, CaseIterable {
 }
 
 struct AddWeightView: View {
-    @State private var weightText = "159"
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Query(sort: \WeightEntry.date, order: .reverse) private var entries: [WeightEntry]
+
+    @State private var weightText = ""
     @State private var selectedDate = Date()
     @State private var selectedUnit: WeightUnit = .kg
 
-    private let lastWeight: Double = 158.6
+    private var lastWeight: Double? {
+        entries.first?.weight
+    }
 
     private var change: Double? {
-        guard let current = Double(weightText) else { return nil }
-        return current - lastWeight
+        guard let current = Double(weightText), let last = lastWeight else { return nil }
+        let currentKg = selectedUnit == .lbs ? current / 2.20462 : current
+        return currentKg - last
     }
 
     var body: some View {
@@ -46,10 +54,21 @@ struct AddWeightView: View {
                 Spacer()
             }
 
-            SaveButton()
+            SaveButton {
+                    guard let value = Double(weightText) else { return }
+                    let kg = selectedUnit == .lbs ? value / 2.20462 : value
+                    let entry = WeightEntry(date: selectedDate, weight: kg, unit: selectedUnit.rawValue)
+                    modelContext.insert(entry)
+                    dismiss()
+                }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .onAppear {
+            if weightText.isEmpty, let last = lastWeight {
+                weightText = String(format: "%.1f", last)
+            }
+        }
     }
 }
 
@@ -164,20 +183,24 @@ private extension AddWeightView {
     }
 
     struct SaveButton: View {
+        let action: () -> Void
+
         var body: some View {
-            HStack(spacing: Spacing.md) {
-                Image(systemName: "checkmark")
-                    .font(.system(size: FontSize.lg, weight: .semibold))
-                    .foregroundColor(.black)
-                Text("Save Entry")
-                    .foregroundColor(.black)
-                    .font(.custom(Fonts.interSemiBold, size: FontSize.xl))
+            Button(action: action) {
+                HStack(spacing: Spacing.md) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: FontSize.lg, weight: .semibold))
+                        .foregroundColor(.black)
+                    Text("Save Entry")
+                        .foregroundColor(.black)
+                        .font(.custom(Fonts.interSemiBold, size: FontSize.xl))
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(MacroColors.carbs)
+                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                .padding()
             }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(MacroColors.carbs)
-            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-            .padding()
         }
     }
 }
@@ -186,4 +209,5 @@ private extension AddWeightView {
     NavigationStack {
         AddWeightView()
     }
+    .modelContainer(for: WeightEntry.self, inMemory: true)
 }

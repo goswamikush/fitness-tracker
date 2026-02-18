@@ -6,25 +6,12 @@
 //
 
 import SwiftUI
+import SwiftData
 import Charts
 
 struct ProgressView: View {
 
-    // MARK: - Hardcoded Data
-
-    private let weightEntries: [WeightEntry] = {
-        let calendar = Calendar.current
-        let today = Date()
-        return [
-            WeightEntry(date: calendar.date(byAdding: .day, value: -42, to: today)!, weight: 79.5, change: -0.3),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -35, to: today)!, weight: 79.2, change: -0.3),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -28, to: today)!, weight: 78.9, change: -0.3),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -21, to: today)!, weight: 78.7, change: -0.2),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -14, to: today)!, weight: 78.3, change: -0.4),
-            WeightEntry(date: calendar.date(byAdding: .day, value: -7, to: today)!, weight: 78.4, change: 0.1),
-            WeightEntry(date: calendar.date(byAdding: .day, value: 0, to: today)!, weight: 77.6, change: -0.8),
-        ]
-    }()
+    @Query(sort: \WeightEntry.date) private var weightEntries: [WeightEntry]
 
     // Goal consistency: true = hit goal, false = missed
     private let calorieConsistency: [Bool] = [true, true, false, true, true, true, true]
@@ -373,4 +360,5 @@ private extension ProgressView {
     NavigationStack {
         ProgressView()
     }
+    .modelContainer(for: WeightEntry.self, inMemory: true)
 }

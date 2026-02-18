@@ -21,6 +21,7 @@ struct FitnessTrackerApp: App {
       }
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
+            WeightEntry.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
