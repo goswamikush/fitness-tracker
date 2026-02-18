@@ -31,7 +31,8 @@ struct DashboardHeaderView: View {
                 fat: Double(consumedFat),
                 proteinGoal: proteinGoal,
                 carbsGoal: carbsGoal,
-                fatGoal: fatGoal
+                fatGoal: fatGoal,
+                selectedDate: selectedDate
             )
         }
     }
@@ -198,6 +199,7 @@ private extension DashboardHeaderView {
         let proteinGoal: Double
         let carbsGoal: Double
         let fatGoal: Double
+        let selectedDate: Date
 
         var body: some View {
             VStack(spacing: Spacing.xl) {
@@ -207,7 +209,7 @@ private extension DashboardHeaderView {
                     MacroRing(current: fat, goal: fatGoal, color: MacroColors.fats, label: "Fat")
                 }
 
-                NavigationLink(destination: NutritionAnalysisView()) {
+                NavigationLink(destination: NutritionAnalysisView(selectedDate: selectedDate)) {
                     HStack(spacing: Spacing.md) {
                         Image(systemName: "chart.pie")
                             .font(.system(size: FontSize.sm))

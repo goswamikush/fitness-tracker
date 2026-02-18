@@ -20,10 +20,17 @@ struct AddEntryView: View {
     let proteinPer100g: Double
     let carbsPer100g: Double
     let fatPer100g: Double
+    let saturatedFatPer100g: Double
+    let transFatPer100g: Double
     let fiberPer100g: Double
     let sugarPer100g: Double
     let sodiumPer100g: Double
     let cholesterolPer100g: Double
+    let calciumPer100g: Double
+    let ironPer100g: Double
+    let vitaminAPer100g: Double
+    let vitaminCPer100g: Double
+    let vitaminDPer100g: Double
     let logDate: Date
     let initialServingSize: Double?
     let servingSizeUnit: String?
@@ -40,10 +47,17 @@ struct AddEntryView: View {
         self.proteinPer100g = usdaResult.proteinPer100g
         self.carbsPer100g = usdaResult.carbsPer100g
         self.fatPer100g = usdaResult.fatPer100g
+        self.saturatedFatPer100g = usdaResult.saturatedFatPer100g
+        self.transFatPer100g = usdaResult.transFatPer100g
         self.fiberPer100g = usdaResult.fiberPer100g
         self.sugarPer100g = usdaResult.sugarPer100g
         self.sodiumPer100g = usdaResult.sodiumPer100g
         self.cholesterolPer100g = usdaResult.cholesterolPer100g
+        self.calciumPer100g = usdaResult.calciumPer100g
+        self.ironPer100g = usdaResult.ironPer100g
+        self.vitaminAPer100g = usdaResult.vitaminAPer100g
+        self.vitaminCPer100g = usdaResult.vitaminCPer100g
+        self.vitaminDPer100g = usdaResult.vitaminDPer100g
         self.initialServingSize = usdaResult.servingSize
         self.servingSizeUnit = usdaResult.servingSizeUnit
         self._servingGrams = State(initialValue: usdaResult.servingSize ?? 100)
@@ -59,10 +73,17 @@ struct AddEntryView: View {
         self.proteinPer100g = foodItem.proteinPer100g
         self.carbsPer100g = foodItem.carbsPer100g
         self.fatPer100g = foodItem.fatPer100g
+        self.saturatedFatPer100g = foodItem.saturatedFatPer100g
+        self.transFatPer100g = foodItem.transFatPer100g
         self.fiberPer100g = foodItem.fiberPer100g
         self.sugarPer100g = foodItem.sugarPer100g
         self.sodiumPer100g = foodItem.sodiumPer100g
         self.cholesterolPer100g = foodItem.cholesterolPer100g
+        self.calciumPer100g = foodItem.calciumPer100g
+        self.ironPer100g = foodItem.ironPer100g
+        self.vitaminAPer100g = foodItem.vitaminAPer100g
+        self.vitaminCPer100g = foodItem.vitaminCPer100g
+        self.vitaminDPer100g = foodItem.vitaminDPer100g
         self.initialServingSize = foodItem.servingSize
         self.servingSizeUnit = foodItem.servingSizeUnit
         self._servingGrams = State(initialValue: foodItem.servingSize ?? 100)
@@ -72,10 +93,17 @@ struct AddEntryView: View {
     private var protein: Int { Int((proteinPer100g * servingGrams) / 100) }
     private var carbs: Int { Int((carbsPer100g * servingGrams) / 100) }
     private var fat: Int { Int((fatPer100g * servingGrams) / 100) }
+    private var saturatedFat: Double { (saturatedFatPer100g * servingGrams) / 100 }
+    private var transFat: Double { (transFatPer100g * servingGrams) / 100 }
     private var fiber: Double { (fiberPer100g * servingGrams) / 100 }
     private var sugar: Double { (sugarPer100g * servingGrams) / 100 }
     private var sodium: Double { (sodiumPer100g * servingGrams) / 100 }
     private var cholesterol: Double { (cholesterolPer100g * servingGrams) / 100 }
+    private var calcium: Double { (calciumPer100g * servingGrams) / 100 }
+    private var iron: Double { (ironPer100g * servingGrams) / 100 }
+    private var vitaminA: Double { (vitaminAPer100g * servingGrams) / 100 }
+    private var vitaminC: Double { (vitaminCPer100g * servingGrams) / 100 }
+    private var vitaminD: Double { (vitaminDPer100g * servingGrams) / 100 }
 
     private var servingDisplay: String {
         if let unit = servingSizeUnit, !unit.isEmpty {
@@ -93,7 +121,13 @@ struct AddEntryView: View {
                     CalculateByDivider()
                     TargetCaloriesRow(servingGrams: $servingGrams, caloriesPer100g: caloriesPer100g)
                     MacroRingsRow(protein: protein, carbs: carbs, fat: fat)
-                    MicronutrientsSection(fiber: fiber, sugar: sugar, sodium: sodium, cholesterol: cholesterol)
+                    MicronutrientsSection(
+                        saturatedFat: saturatedFat, transFat: transFat,
+                        fiber: fiber, sugar: sugar,
+                        sodium: sodium, cholesterol: cholesterol,
+                        calcium: calcium, iron: iron,
+                        vitaminA: vitaminA, vitaminC: vitaminC, vitaminD: vitaminD
+                    )
                 }
                 .padding()
                 .padding(.bottom, 80)
@@ -125,10 +159,17 @@ struct AddEntryView: View {
                 proteinPer100g: proteinPer100g,
                 carbsPer100g: carbsPer100g,
                 fatPer100g: fatPer100g,
+                saturatedFatPer100g: saturatedFatPer100g,
+                transFatPer100g: transFatPer100g,
                 fiberPer100g: fiberPer100g,
                 sugarPer100g: sugarPer100g,
                 sodiumPer100g: sodiumPer100g,
                 cholesterolPer100g: cholesterolPer100g,
+                calciumPer100g: calciumPer100g,
+                ironPer100g: ironPer100g,
+                vitaminAPer100g: vitaminAPer100g,
+                vitaminCPer100g: vitaminCPer100g,
+                vitaminDPer100g: vitaminDPer100g,
                 servingSize: initialServingSize,
                 servingSizeUnit: servingSizeUnit
             )
@@ -320,25 +361,39 @@ private extension AddEntryView {
     }
 
     struct MicronutrientsSection: View {
+        let saturatedFat: Double
+        let transFat: Double
         let fiber: Double
         let sugar: Double
         let sodium: Double
         let cholesterol: Double
+        let calcium: Double
+        let iron: Double
+        let vitaminA: Double
+        let vitaminC: Double
+        let vitaminD: Double
 
-        // Daily reference values
-        private let fiberDV = 28.0    // g
-        private let sugarDV = 50.0    // g
-        private let sodiumDV = 2300.0 // mg
-        private let cholesterolDV = 300.0 // mg
+        // FDA Daily Values
+        private let saturatedFatDV = 20.0   // g
+        private let fiberDV = 28.0          // g
+        private let sugarDV = 50.0          // g
+        private let sodiumDV = 2300.0       // mg
+        private let cholesterolDV = 300.0   // mg
+        private let calciumDV = 1300.0      // mg
+        private let ironDV = 18.0           // mg
+        private let vitaminADV = 3000.0     // IU
+        private let vitaminCDV = 90.0       // mg
+        private let vitaminDDV = 800.0      // IU
 
         private func dvPercent(_ value: Double, _ dv: Double) -> Int {
-            Int((value / dv) * 100)
+            guard dv > 0 else { return 0 }
+            return Int((value / dv) * 100)
         }
 
         var body: some View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 HStack {
-                    Text("MICRONUTRIENTS")
+                    Text("NUTRITION FACTS")
                         .foregroundColor(AppColors.macroTextColor)
                         .font(.custom(Fonts.interMedium, size: FontSize.xs))
                         .tracking(1)
@@ -356,22 +411,50 @@ private extension AddEntryView {
                         )
                 }
 
+                // Fat breakdown
+                VStack(spacing: 0) {
+                    MicronutrientRow(name: "Saturated Fat", value: String(format: "%.1fg", saturatedFat), dvPercent: dvPercent(saturatedFat, saturatedFatDV), showTopDivider: false)
+                    MicronutrientRow(name: "Trans Fat", value: String(format: "%.1fg", transFat))
+                }
+                .padding()
+                .background(sectionBackground)
+
+                // Carb breakdown
                 VStack(spacing: 0) {
                     MicronutrientRow(name: "Fiber", value: String(format: "%.1fg", fiber), dvPercent: dvPercent(fiber, fiberDV), showTopDivider: false)
                     MicronutrientRow(name: "Sugar", value: String(format: "%.1fg", sugar), dvPercent: dvPercent(sugar, sugarDV))
-                    MicronutrientRow(name: "Sodium", value: String(format: "%.0fmg", sodium), dvPercent: dvPercent(sodium, sodiumDV))
-                    MicronutrientRow(name: "Cholesterol", value: String(format: "%.0fmg", cholesterol), dvPercent: dvPercent(cholesterol, cholesterolDV))
                 }
                 .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: CornerRadius.sm)
-                        .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: CornerRadius.sm)
-                                .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
-                        )
-                )
+                .background(sectionBackground)
+
+                // Minerals
+                VStack(spacing: 0) {
+                    MicronutrientRow(name: "Cholesterol", value: String(format: "%.0fmg", cholesterol), dvPercent: dvPercent(cholesterol, cholesterolDV), showTopDivider: false)
+                    MicronutrientRow(name: "Sodium", value: String(format: "%.0fmg", sodium), dvPercent: dvPercent(sodium, sodiumDV))
+                    MicronutrientRow(name: "Calcium", value: String(format: "%.0fmg", calcium), dvPercent: dvPercent(calcium, calciumDV))
+                    MicronutrientRow(name: "Iron", value: String(format: "%.1fmg", iron), dvPercent: dvPercent(iron, ironDV))
+                }
+                .padding()
+                .background(sectionBackground)
+
+                // Vitamins
+                VStack(spacing: 0) {
+                    MicronutrientRow(name: "Vitamin A", value: String(format: "%.0f IU", vitaminA), dvPercent: dvPercent(vitaminA, vitaminADV), showTopDivider: false)
+                    MicronutrientRow(name: "Vitamin C", value: String(format: "%.1fmg", vitaminC), dvPercent: dvPercent(vitaminC, vitaminCDV))
+                    MicronutrientRow(name: "Vitamin D", value: String(format: "%.0f IU", vitaminD), dvPercent: dvPercent(vitaminD, vitaminDDV))
+                }
+                .padding()
+                .background(sectionBackground)
             }
+        }
+
+        private var sectionBackground: some View {
+            RoundedRectangle(cornerRadius: CornerRadius.sm)
+                .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                )
         }
     }
 
@@ -448,10 +531,17 @@ private extension AddEntryView {
                 proteinPer100g: 21,
                 carbsPer100g: 22,
                 fatPer100g: 50,
+                saturatedFatPer100g: 3.8,
+                transFatPer100g: 0,
                 fiberPer100g: 12.5,
                 sugarPer100g: 4.4,
                 sodiumPer100g: 1,
                 cholesterolPer100g: 0,
+                calciumPer100g: 269,
+                ironPer100g: 3.7,
+                vitaminAPer100g: 0,
+                vitaminCPer100g: 0,
+                vitaminDPer100g: 0,
                 servingSize: 28,
                 servingSizeUnit: "g"
             ),
