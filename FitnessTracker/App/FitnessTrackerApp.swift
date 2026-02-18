@@ -30,7 +30,18 @@ struct FitnessTrackerApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // Schema changed during development — delete the old store and retry
+            let url = modelConfiguration.url
+            let dir = url.deletingLastPathComponent()
+            let base = url.deletingPathExtension().lastPathComponent
+            for suffix in ["", "-wal", "-shm"] {
+                try? FileManager.default.removeItem(at: dir.appendingPathComponent(base + ".store" + suffix))
+            }
+            do {
+                return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            } catch {
+                fatalError("Could not create ModelContainer: \(error)")
+            }
         }
     }()
 

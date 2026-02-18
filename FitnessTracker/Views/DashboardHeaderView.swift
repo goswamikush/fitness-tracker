@@ -6,6 +6,7 @@
 import SwiftUI
 
 struct DashboardHeaderView: View {
+    @Binding var selectedDate: Date
     var consumedCalories: Int = 0
     var consumedProtein: Int = 0
     var consumedCarbs: Int = 0
@@ -22,7 +23,7 @@ struct DashboardHeaderView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            DateBar()
+            DateBar(selectedDate: $selectedDate)
             CaloriesSection(consumed: consumedCalories, goal: calorieGoal, remaining: remaining)
             MacroRingsSection(
                 protein: Double(consumedProtein),
@@ -41,24 +42,89 @@ struct DashboardHeaderView: View {
 private extension DashboardHeaderView {
 
     struct DateBar: View {
+        @Binding var selectedDate: Date
+        @State private var showDatePicker = false
+
+        private var dateLabel: String {
+            if Calendar.current.isDateInToday(selectedDate) {
+                return "TODAY"
+            } else if Calendar.current.isDateInYesterday(selectedDate) {
+                return "YESTERDAY"
+            } else if Calendar.current.isDateInTomorrow(selectedDate) {
+                return "TOMORROW"
+            } else {
+                let formatter = DateFormatter()
+                formatter.dateFormat = "MMM d, yyyy"
+                return formatter.string(from: selectedDate).uppercased()
+            }
+        }
+
         var body: some View {
             HStack {
-                Image(systemName: "calendar")
-                    .foregroundColor(AppColors.lightMacroTextColor)
+                Button {
+                    showDatePicker = true
+                } label: {
+                    Image(systemName: "calendar")
+                        .foregroundColor(AppColors.lightMacroTextColor)
+                }
 
                 Spacer()
 
-                Text("TODAY")
+                Button {
+                    selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) ?? selectedDate
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppColors.lightMacroTextColor)
+                }
+
+                Text(dateLabel)
                     .foregroundStyle(.white)
                     .font(.custom(Fonts.interSemiBold, size: 14))
+                    .padding(.horizontal, Spacing.md)
+
+                Button {
+                    selectedDate = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) ?? selectedDate
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(AppColors.lightMacroTextColor)
+                }
 
                 Spacer()
 
-                // Invisible icon to center "TODAY"
+                // Invisible icon to balance layout
                 Image(systemName: "calendar")
                     .foregroundColor(.clear)
             }
             .padding(.horizontal)
+            .sheet(isPresented: $showDatePicker) {
+                DatePickerSheet(selectedDate: $selectedDate, isPresented: $showDatePicker)
+            }
+        }
+    }
+
+    struct DatePickerSheet: View {
+        @Binding var selectedDate: Date
+        @Binding var isPresented: Bool
+
+        var body: some View {
+            NavigationStack {
+                DatePicker("Select Date", selection: $selectedDate, displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .tint(MacroColors.carbs)
+                    .padding()
+                    .navigationTitle("Select Date")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") {
+                                isPresented = false
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.medium])
         }
     }
 
@@ -168,7 +234,7 @@ private extension DashboardHeaderView {
         AppColors.background
             .ignoresSafeArea()
 
-        DashboardHeaderView()
+        DashboardHeaderView(selectedDate: .constant(Date()))
             .padding()
     }
 }

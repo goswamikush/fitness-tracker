@@ -10,35 +10,36 @@ import SwiftData
 
 struct DashboardView: View {
     @Query(sort: \MealEntry.date) private var allEntries: [MealEntry]
+    @State private var selectedDate = Date()
 
     private let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
 
-    private var todayEntries: [MealEntry] {
-        allEntries.filter { Calendar.current.isDateInToday($0.date) }
+    private var selectedDayEntries: [MealEntry] {
+        allEntries.filter { Calendar.current.isDate($0.date, inSameDayAs: selectedDate) }
     }
 
     private func entries(for mealType: String) -> [MealEntry] {
-        todayEntries.filter { $0.mealType == mealType }
+        selectedDayEntries.filter { $0.mealType == mealType }
     }
 
     private var totalCalories: Int {
-        Int(todayEntries.reduce(0) { $0 + $1.calories })
+        Int(selectedDayEntries.reduce(0) { $0 + $1.calories })
     }
 
     private var totalProtein: Int {
-        Int(todayEntries.reduce(0) { $0 + $1.protein })
+        Int(selectedDayEntries.reduce(0) { $0 + $1.protein })
     }
 
     private var totalCarbs: Int {
-        Int(todayEntries.reduce(0) { $0 + $1.carbs })
+        Int(selectedDayEntries.reduce(0) { $0 + $1.carbs })
     }
 
     private var totalFat: Int {
-        Int(todayEntries.reduce(0) { $0 + $1.fat })
+        Int(selectedDayEntries.reduce(0) { $0 + $1.fat })
     }
 
     private var totalItems: Int {
-        todayEntries.count
+        selectedDayEntries.count
     }
 
     var body: some View {
@@ -48,6 +49,7 @@ struct DashboardView: View {
 
             VStack(spacing: 24) {
                 DashboardHeaderView(
+                    selectedDate: $selectedDate,
                     consumedCalories: totalCalories,
                     consumedProtein: totalProtein,
                     consumedCarbs: totalCarbs,
@@ -60,7 +62,7 @@ struct DashboardView: View {
                         MealsSectionHeader(itemCount: totalItems)
 
                         ForEach(mealTypes, id: \.self) { mealType in
-                            MealCard(mealName: mealType, entries: entries(for: mealType))
+                            MealCard(mealName: mealType, entries: entries(for: mealType), logDate: selectedDate)
                         }
                     }
                     .padding(.horizontal)

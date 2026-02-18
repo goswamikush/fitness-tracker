@@ -10,6 +10,7 @@ import SwiftUI
 struct MealCard: View {
     let mealName: String
     let entries: [MealEntry]
+    var logDate: Date = Date()
     @State private var isExpanded = true
 
     private var isEmpty: Bool { entries.isEmpty }
@@ -33,11 +34,11 @@ struct MealCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.lg) {
             if isEmpty {
-                EmptyContent(mealName: mealName, isExpanded: $isExpanded)
+                EmptyContent(mealName: mealName, logDate: logDate, isExpanded: $isExpanded)
             } else if isExpanded {
-                ExpandedContent(mealName: mealName, entries: entries, totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat, isExpanded: $isExpanded)
+                ExpandedContent(mealName: mealName, logDate: logDate, entries: entries, totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat, isExpanded: $isExpanded)
             } else {
-                CollapsedContent(mealName: mealName, entries: entries, totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat, isExpanded: $isExpanded)
+                CollapsedContent(mealName: mealName, logDate: logDate, entries: entries, totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat, isExpanded: $isExpanded)
             }
         }
         .padding()
@@ -64,6 +65,7 @@ private extension MealCard {
 
     struct EmptyContent: View {
         let mealName: String
+        let logDate: Date
         @Binding var isExpanded: Bool
 
         var body: some View {
@@ -81,7 +83,7 @@ private extension MealCard {
                     Spacer()
 
                     HStack(spacing: Spacing.xl) {
-                        NavigationLink(destination: AddFoodView(mealName: mealName)) {
+                        NavigationLink(destination: AddFoodView(mealName: mealName, logDate: logDate)) {
                             Image(systemName: "plus")
                                 .font(.system(size: IconSize.lg, weight: .medium))
                                 .foregroundColor(AppColors.macroTextColor)
@@ -97,7 +99,7 @@ private extension MealCard {
                     }
                 }
 
-                NavigationLink(destination: AddFoodView(mealName: mealName)) {
+                NavigationLink(destination: AddFoodView(mealName: mealName, logDate: logDate)) {
                     Text("Tap + to add food")
                         .foregroundStyle(AppColors.lightMacroTextColor)
                         .font(.custom(Fonts.interRegular, size: FontSize.md))
@@ -115,6 +117,7 @@ private extension MealCard {
 
     struct ExpandedContent: View {
         let mealName: String
+        let logDate: Date
         let entries: [MealEntry]
         let totalCalories: Int
         let totalProtein: Int
@@ -124,7 +127,7 @@ private extension MealCard {
 
         var body: some View {
             VStack(spacing: Spacing.xxl) {
-                ExpandedHeader(mealName: mealName, totalCalories: totalCalories, isExpanded: $isExpanded)
+                ExpandedHeader(mealName: mealName, logDate: logDate, totalCalories: totalCalories, isExpanded: $isExpanded)
                 ForEach(entries) { entry in
                     FoodItemRow(
                         name: entry.foodItem?.name ?? "Unknown",
@@ -142,6 +145,7 @@ private extension MealCard {
 
     struct CollapsedContent: View {
         let mealName: String
+        let logDate: Date
         let entries: [MealEntry]
         let totalCalories: Int
         let totalProtein: Int
@@ -194,7 +198,7 @@ private extension MealCard {
                         .foregroundStyle(AppColors.lightMacroTextColor)
                         .font(.custom(Fonts.interRegular, size: FontSize.sm))
 
-                    NavigationLink(destination: AddFoodView(mealName: mealName)) {
+                    NavigationLink(destination: AddFoodView(mealName: mealName, logDate: logDate)) {
                         Image(systemName: "plus")
                             .font(.system(size: IconSize.lg, weight: .medium))
                             .foregroundColor(AppColors.macroTextColor)
@@ -214,6 +218,7 @@ private extension MealCard {
 
     struct ExpandedHeader: View {
         let mealName: String
+        let logDate: Date
         let totalCalories: Int
         @Binding var isExpanded: Bool
 
@@ -232,7 +237,7 @@ private extension MealCard {
                 Spacer()
 
                 HStack(spacing: Spacing.xl) {
-                    NavigationLink(destination: AddFoodView(mealName: mealName)) {
+                    NavigationLink(destination: AddFoodView(mealName: mealName, logDate: logDate)) {
                         Image(systemName: "plus")
                             .font(.system(size: IconSize.lg, weight: .medium))
                             .foregroundColor(AppColors.macroTextColor)
@@ -308,7 +313,7 @@ private extension MealCard {
 
         NavigationStack {
             VStack(alignment: .leading, spacing: 8) {
-                MealCard(mealName: "Dinner", entries: [])
+                MealCard(mealName: "Dinner", entries: [], logDate: Date())
             }
             .padding()
         }

@@ -20,34 +20,49 @@ struct AddEntryView: View {
     let proteinPer100g: Double
     let carbsPer100g: Double
     let fatPer100g: Double
+    let fiberPer100g: Double
+    let sugarPer100g: Double
+    let sodiumPer100g: Double
+    let cholesterolPer100g: Double
+    let logDate: Date
     let initialServingSize: Double?
     let servingSizeUnit: String?
 
     @State private var servingGrams: Double
 
-    init(usdaResult: USDAFoodResult, mealName: String) {
+    init(usdaResult: USDAFoodResult, mealName: String, logDate: Date = Date()) {
         self.fdcId = usdaResult.id
         self.foodName = usdaResult.name
         self.brand = usdaResult.brand ?? ""
         self.mealName = mealName
+        self.logDate = logDate
         self.caloriesPer100g = usdaResult.caloriesPer100g
         self.proteinPer100g = usdaResult.proteinPer100g
         self.carbsPer100g = usdaResult.carbsPer100g
         self.fatPer100g = usdaResult.fatPer100g
+        self.fiberPer100g = usdaResult.fiberPer100g
+        self.sugarPer100g = usdaResult.sugarPer100g
+        self.sodiumPer100g = usdaResult.sodiumPer100g
+        self.cholesterolPer100g = usdaResult.cholesterolPer100g
         self.initialServingSize = usdaResult.servingSize
         self.servingSizeUnit = usdaResult.servingSizeUnit
         self._servingGrams = State(initialValue: usdaResult.servingSize ?? 100)
     }
 
-    init(foodItem: FoodItem, mealName: String) {
+    init(foodItem: FoodItem, mealName: String, logDate: Date = Date()) {
         self.fdcId = foodItem.fdcId
         self.foodName = foodItem.name
         self.brand = foodItem.brand ?? ""
         self.mealName = mealName
+        self.logDate = logDate
         self.caloriesPer100g = foodItem.caloriesPer100g
         self.proteinPer100g = foodItem.proteinPer100g
         self.carbsPer100g = foodItem.carbsPer100g
         self.fatPer100g = foodItem.fatPer100g
+        self.fiberPer100g = foodItem.fiberPer100g
+        self.sugarPer100g = foodItem.sugarPer100g
+        self.sodiumPer100g = foodItem.sodiumPer100g
+        self.cholesterolPer100g = foodItem.cholesterolPer100g
         self.initialServingSize = foodItem.servingSize
         self.servingSizeUnit = foodItem.servingSizeUnit
         self._servingGrams = State(initialValue: foodItem.servingSize ?? 100)
@@ -57,6 +72,10 @@ struct AddEntryView: View {
     private var protein: Int { Int((proteinPer100g * servingGrams) / 100) }
     private var carbs: Int { Int((carbsPer100g * servingGrams) / 100) }
     private var fat: Int { Int((fatPer100g * servingGrams) / 100) }
+    private var fiber: Double { (fiberPer100g * servingGrams) / 100 }
+    private var sugar: Double { (sugarPer100g * servingGrams) / 100 }
+    private var sodium: Double { (sodiumPer100g * servingGrams) / 100 }
+    private var cholesterol: Double { (cholesterolPer100g * servingGrams) / 100 }
 
     private var servingDisplay: String {
         if let unit = servingSizeUnit, !unit.isEmpty {
@@ -74,7 +93,7 @@ struct AddEntryView: View {
                     CalculateByDivider()
                     TargetCaloriesRow(servingGrams: $servingGrams, caloriesPer100g: caloriesPer100g)
                     MacroRingsRow(protein: protein, carbs: carbs, fat: fat)
-                    MicronutrientsSection()
+                    MicronutrientsSection(fiber: fiber, sugar: sugar, sodium: sodium, cholesterol: cholesterol)
                 }
                 .padding()
                 .padding(.bottom, 80)
@@ -106,6 +125,10 @@ struct AddEntryView: View {
                 proteinPer100g: proteinPer100g,
                 carbsPer100g: carbsPer100g,
                 fatPer100g: fatPer100g,
+                fiberPer100g: fiberPer100g,
+                sugarPer100g: sugarPer100g,
+                sodiumPer100g: sodiumPer100g,
+                cholesterolPer100g: cholesterolPer100g,
                 servingSize: initialServingSize,
                 servingSizeUnit: servingSizeUnit
             )
@@ -113,7 +136,7 @@ struct AddEntryView: View {
         }
 
         let entry = MealEntry(
-            date: Date(),
+            date: logDate,
             mealType: mealName,
             servingGrams: servingGrams,
             foodItem: food
@@ -172,6 +195,7 @@ private extension AddEntryView {
     struct ServingRow: View {
         @Binding var servingGrams: Double
         @State private var servingText: String = ""
+        @FocusState private var isFocused: Bool
 
         var body: some View {
             HStack(spacing: 0) {
@@ -181,8 +205,9 @@ private extension AddEntryView {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
+                    .focused($isFocused)
                     .onChange(of: servingText) { _, newValue in
-                        if let val = Double(newValue), val > 0 {
+                        if isFocused, let val = Double(newValue), val > 0 {
                             servingGrams = val
                         }
                     }
@@ -205,9 +230,8 @@ private extension AddEntryView {
                 servingText = "\(Int(servingGrams))"
             }
             .onChange(of: servingGrams) { _, newValue in
-                let newText = "\(Int(newValue))"
-                if newText != servingText {
-                    servingText = newText
+                if !isFocused {
+                    servingText = "\(Int(newValue))"
                 }
             }
         }
@@ -236,6 +260,7 @@ private extension AddEntryView {
         @Binding var servingGrams: Double
         let caloriesPer100g: Double
         @State private var calorieText: String = ""
+        @FocusState private var isFocused: Bool
 
         private var calories: Int {
             Int((caloriesPer100g * servingGrams) / 100)
@@ -253,8 +278,9 @@ private extension AddEntryView {
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 70)
+                    .focused($isFocused)
                     .onChange(of: calorieText) { _, newValue in
-                        if let target = Double(newValue), target > 0, caloriesPer100g > 0 {
+                        if isFocused, let target = Double(newValue), target > 0, caloriesPer100g > 0 {
                             servingGrams = (target / caloriesPer100g) * 100
                         }
                     }
@@ -271,7 +297,9 @@ private extension AddEntryView {
                 calorieText = "\(calories)"
             }
             .onChange(of: servingGrams) { _, _ in
-                calorieText = "\(calories)"
+                if !isFocused {
+                    calorieText = "\(calories)"
+                }
             }
         }
     }
@@ -292,6 +320,21 @@ private extension AddEntryView {
     }
 
     struct MicronutrientsSection: View {
+        let fiber: Double
+        let sugar: Double
+        let sodium: Double
+        let cholesterol: Double
+
+        // Daily reference values
+        private let fiberDV = 28.0    // g
+        private let sugarDV = 50.0    // g
+        private let sodiumDV = 2300.0 // mg
+        private let cholesterolDV = 300.0 // mg
+
+        private func dvPercent(_ value: Double, _ dv: Double) -> Int {
+            Int((value / dv) * 100)
+        }
+
         var body: some View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 HStack {
@@ -314,10 +357,10 @@ private extension AddEntryView {
                 }
 
                 VStack(spacing: 0) {
-                    MicronutrientRow(name: "Fiber", value: "0g", showTopDivider: false)
-                    MicronutrientRow(name: "Sugar", value: "0g")
-                    MicronutrientRow(name: "Sodium", value: "0mg")
-                    MicronutrientRow(name: "Cholesterol", value: "0mg")
+                    MicronutrientRow(name: "Fiber", value: String(format: "%.1fg", fiber), dvPercent: dvPercent(fiber, fiberDV), showTopDivider: false)
+                    MicronutrientRow(name: "Sugar", value: String(format: "%.1fg", sugar), dvPercent: dvPercent(sugar, sugarDV))
+                    MicronutrientRow(name: "Sodium", value: String(format: "%.0fmg", sodium), dvPercent: dvPercent(sodium, sodiumDV))
+                    MicronutrientRow(name: "Cholesterol", value: String(format: "%.0fmg", cholesterol), dvPercent: dvPercent(cholesterol, cholesterolDV))
                 }
                 .padding()
                 .background(
@@ -335,6 +378,7 @@ private extension AddEntryView {
     struct MicronutrientRow: View {
         let name: String
         let value: String
+        var dvPercent: Int = 0
         var showTopDivider: Bool = true
 
         var body: some View {
@@ -352,6 +396,10 @@ private extension AddEntryView {
                     Text(value)
                         .foregroundColor(AppColors.macroTextColor)
                         .font(.custom(Fonts.interRegular, size: FontSize.lg))
+                    Text("\(dvPercent)%")
+                        .foregroundColor(AppColors.lightMacroTextColor)
+                        .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                        .frame(width: 40, alignment: .trailing)
                 }
                 .padding(.vertical, Spacing.lg)
             }
@@ -400,6 +448,10 @@ private extension AddEntryView {
                 proteinPer100g: 21,
                 carbsPer100g: 22,
                 fatPer100g: 50,
+                fiberPer100g: 12.5,
+                sugarPer100g: 4.4,
+                sodiumPer100g: 1,
+                cholesterolPer100g: 0,
                 servingSize: 28,
                 servingSizeUnit: "g"
             ),

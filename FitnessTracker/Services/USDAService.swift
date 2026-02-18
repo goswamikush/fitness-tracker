@@ -13,13 +13,17 @@ struct USDAFoodResult: Identifiable {
     let proteinPer100g: Double
     let carbsPer100g: Double
     let fatPer100g: Double
+    let fiberPer100g: Double
+    let sugarPer100g: Double
+    let sodiumPer100g: Double
+    let cholesterolPer100g: Double
     let servingSize: Double?
     let servingSizeUnit: String?
 }
 
 class USDAService {
     static let shared = USDAService()
-    private let apiKey = "DEMO_KEY"
+    private let apiKey = Secrets.usdaAPIKey
     private let baseURL = "https://api.nal.usda.gov/fdc/v1/foods/search"
 
     func searchFoods(query: String) async throws -> [USDAFoodResult] {
@@ -29,18 +33,26 @@ class USDAService {
         components.queryItems = [
             URLQueryItem(name: "api_key", value: apiKey),
             URLQueryItem(name: "query", value: query),
-            URLQueryItem(name: "pageSize", value: "25"),
-            URLQueryItem(name: "dataType", value: "Survey (FNDDS),Foundation,SR Legacy")
+            URLQueryItem(name: "pageSize", value: "25")
         ]
 
-        guard let url = components.url else { return [] }
+        guard let url = components.url else {
+            print("[USDA] Invalid URL")
+            return []
+        }
 
-        let (data, _) = try await URLSession.shared.data(from: url)
+        print("[USDA] Fetching: \(url)")
+        let (data, response) = try await URLSession.shared.data(from: url)
+        if let http = response as? HTTPURLResponse {
+            print("[USDA] Status: \(http.statusCode)")
+        }
 
         guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let foods = json["foods"] as? [[String: Any]] else {
+            print("[USDA] Parse failed: \(String(data: data, encoding: .utf8) ?? "nil")")
             return []
         }
+        print("[USDA] Found \(foods.count) results")
 
         return foods.compactMap { food -> USDAFoodResult? in
             guard let fdcId = food["fdcId"] as? Int,
@@ -55,6 +67,10 @@ class USDAService {
             var protein = 0.0
             var carbs = 0.0
             var fat = 0.0
+            var fiber = 0.0
+            var sugar = 0.0
+            var sodium = 0.0
+            var cholesterol = 0.0
 
             for nutrient in nutrients {
                 guard let nutrientId = nutrient["nutrientId"] as? Int,
@@ -64,6 +80,10 @@ class USDAService {
                 case 1003: protein = value
                 case 1005: carbs = value
                 case 1004: fat = value
+                case 1079: fiber = value
+                case 2000: sugar = value
+                case 1093: sodium = value
+                case 1253: cholesterol = value
                 default: break
                 }
             }
@@ -79,6 +99,10 @@ class USDAService {
                 proteinPer100g: protein,
                 carbsPer100g: carbs,
                 fatPer100g: fat,
+                fiberPer100g: fiber,
+                sugarPer100g: sugar,
+                sodiumPer100g: sodium,
+                cholesterolPer100g: cholesterol,
                 servingSize: servingSize,
                 servingSizeUnit: servingSizeUnit
             )

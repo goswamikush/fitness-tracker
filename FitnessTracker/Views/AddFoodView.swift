@@ -10,6 +10,7 @@ import SwiftData
 
 struct AddFoodView: View {
     let mealName: String
+    var logDate: Date = Date()
     @State private var searchText = ""
     @State private var searchResults: [USDAFoodResult] = []
     @State private var isSearching = false
@@ -40,9 +41,9 @@ struct AddFoodView: View {
                         .tint(.white)
                         .padding(.vertical, Spacing.xxl)
                 } else if !searchText.isEmpty {
-                    SearchResultsSection(results: searchResults, mealName: mealName)
+                    SearchResultsSection(results: searchResults, mealName: mealName, logDate: logDate)
                 } else {
-                    RecentSection(recentFoods: recentFoods, mealName: mealName)
+                    RecentSection(recentFoods: recentFoods, mealName: mealName, logDate: logDate)
                     YesterdaySection()
                 }
             }
@@ -167,9 +168,10 @@ private extension AddFoodView {
     struct SearchResultRow: View {
         let result: USDAFoodResult
         let mealName: String
+        let logDate: Date
 
         var body: some View {
-            NavigationLink(destination: AddEntryView(usdaResult: result, mealName: mealName)) {
+            NavigationLink(destination: AddEntryView(usdaResult: result, mealName: mealName, logDate: logDate)) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Text(result.name.capitalized)
                         .foregroundColor(.white)
@@ -217,6 +219,7 @@ private extension AddFoodView {
     struct SearchResultsSection: View {
         let results: [USDAFoodResult]
         let mealName: String
+        let logDate: Date
 
         var body: some View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
@@ -230,7 +233,7 @@ private extension AddFoodView {
                         .padding(.vertical, Spacing.xxl)
                 } else {
                     ForEach(results) { result in
-                        SearchResultRow(result: result, mealName: mealName)
+                        SearchResultRow(result: result, mealName: mealName, logDate: logDate)
                     }
                 }
             }
@@ -240,9 +243,10 @@ private extension AddFoodView {
     struct RecentFoodRow: View {
         let food: FoodItem
         let mealName: String
+        let logDate: Date
 
         var body: some View {
-            NavigationLink(destination: AddEntryView(foodItem: food, mealName: mealName)) {
+            NavigationLink(destination: AddEntryView(foodItem: food, mealName: mealName, logDate: logDate)) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Text(food.name.capitalized)
                         .foregroundColor(.white)
@@ -283,6 +287,7 @@ private extension AddFoodView {
     struct RecentSection: View {
         let recentFoods: [FoodItem]
         let mealName: String
+        let logDate: Date
 
         var body: some View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
@@ -295,7 +300,7 @@ private extension AddFoodView {
                         .padding(.vertical, Spacing.lg)
                 } else {
                     ForEach(recentFoods) { food in
-                        RecentFoodRow(food: food, mealName: mealName)
+                        RecentFoodRow(food: food, mealName: mealName, logDate: logDate)
                     }
                 }
             }
