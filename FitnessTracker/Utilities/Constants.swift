@@ -12,6 +12,7 @@ struct AppColors {
     static let cardBackground = Color(red: 26/255, green: 26/255, blue: 26/255)
     static let lightMacroTextColor = Color(red: 161/255, green:  161/255, blue: 170/255)
     static let macroTextColor = Color(red: 250/255, green:  250/255, blue: 250/255).opacity(0.8)
+    static let negative = Color(red: 250/255, green: 100/255, blue: 100/255)
 }
 
 struct MacroColors {

@@ -8,6 +8,15 @@
 import SwiftUI
 import SwiftData
 
+private enum AddWeightLayout {
+    static let weightFontSize: CGFloat = 48
+    static let animationDuration: Double = 0.2
+    static let toggleItemCornerRadius: CGFloat = 8
+    static let toggleInnerPadding: CGFloat = 3
+    static let toggleCornerRadius: CGFloat = 10
+    static let lbsToKg: Double = 2.20462
+}
+
 enum WeightUnit: String, CaseIterable {
     case kg = "kg"
     case lbs = "lbs"
@@ -28,7 +37,7 @@ struct AddWeightView: View {
 
     private var change: Double? {
         guard let current = Double(weightText), let last = lastWeight else { return nil }
-        let currentKg = selectedUnit == .lbs ? current / 2.20462 : current
+        let currentKg = selectedUnit == .lbs ? current / AddWeightLayout.lbsToKg : current
         return currentKg - last
     }
 
@@ -56,7 +65,7 @@ struct AddWeightView: View {
 
             SaveButton {
                     guard let value = Double(weightText) else { return }
-                    let kg = selectedUnit == .lbs ? value / 2.20462 : value
+                    let kg = selectedUnit == .lbs ? value / AddWeightLayout.lbsToKg : value
                     let entry = WeightEntry(date: selectedDate, weight: kg, unit: selectedUnit.rawValue)
                     modelContext.insert(entry)
                     dismiss()
@@ -83,7 +92,7 @@ private extension AddWeightView {
         var body: some View {
             TextField("", text: $weightText)
                 .foregroundStyle(.white)
-                .font(.custom(Fonts.outfitSemiBold, size: 48))
+                .font(.custom(Fonts.outfitSemiBold, size: AddWeightLayout.weightFontSize))
                 .multilineTextAlignment(.center)
                 .keyboardType(.decimalPad)
                 .focused($isFocused)
@@ -117,7 +126,7 @@ private extension AddWeightView {
             HStack(spacing: 0) {
                 ForEach(WeightUnit.allCases, id: \.self) { unit in
                     Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        withAnimation(.easeInOut(duration: AddWeightLayout.animationDuration)) {
                             selectedUnit = unit
                         }
                     } label: {
@@ -127,18 +136,18 @@ private extension AddWeightView {
                             .padding(.horizontal, Spacing.lg)
                             .padding(.vertical, Spacing.sm)
                             .background(
-                                RoundedRectangle(cornerRadius: 8)
+                                RoundedRectangle(cornerRadius: AddWeightLayout.toggleItemCornerRadius)
                                     .fill(selectedUnit == unit ? MacroColors.carbs : Color.clear)
                             )
                     }
                 }
             }
-            .padding(3)
+            .padding(AddWeightLayout.toggleInnerPadding)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: AddWeightLayout.toggleCornerRadius)
                     .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10)
+                        RoundedRectangle(cornerRadius: AddWeightLayout.toggleCornerRadius)
                             .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
                     )
             )
@@ -159,7 +168,7 @@ private extension AddWeightView {
                 Text("\(change >= 0 ? "+" : "")\(String(format: "%.1f", change)) \(unit.rawValue) since last weigh-in")
                     .font(.custom(Fonts.interMedium, size: FontSize.sm))
             }
-            .foregroundStyle(isLoss ? MacroColors.carbs : Color(red: 250/255, green: 100/255, blue: 100/255))
+            .foregroundStyle(isLoss ? MacroColors.carbs : AppColors.negative)
         }
     }
 
