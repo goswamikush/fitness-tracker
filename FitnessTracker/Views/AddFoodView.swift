@@ -9,13 +9,17 @@ import SwiftUI
 import SwiftData
 
 struct AddFoodView: View {
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     let mealName: String
     var logDate: Date = Date()
+    @State private var selectedTab = 0
     @State private var searchText = ""
     @State private var searchResults: [USDAFoodResult] = []
     @State private var isSearching = false
     @State private var searchTask: Task<Void, Never>?
     @Query(sort: \MealEntry.date, order: .reverse) private var allEntries: [MealEntry]
+    @Query(sort: \CustomMeal.createdAt, order: .reverse) private var customMeals: [CustomMeal]
 
     private var recentFoods: [FoodItem] {
         var seen = Set<Int>()
@@ -31,23 +35,29 @@ struct AddFoodView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.xl) {
-                SearchBar(searchText: $searchText)
-                ScanBarcodeButton()
+        VStack(spacing: 0) {
+            TabPicker(selectedTab: $selectedTab)
+                .padding(.horizontal)
+                .padding(.top, Spacing.md)
 
-                if isSearching {
-                    SwiftUI.ProgressView()
-                        .tint(.white)
-                        .padding(.vertical, Spacing.xxl)
-                } else if !searchText.isEmpty {
-                    SearchResultsSection(results: searchResults, mealName: mealName, logDate: logDate)
-                } else {
-                    RecentSection(recentFoods: recentFoods, mealName: mealName, logDate: logDate)
-                    YesterdaySection()
-                }
+            if selectedTab == 0 {
+                FoodTabContent(
+                    searchText: $searchText,
+                    isSearching: isSearching,
+                    searchResults: searchResults,
+                    recentFoods: recentFoods,
+                    mealName: mealName,
+                    logDate: logDate
+                )
+            } else {
+                CustomMealsTabContent(
+                    customMeals: customMeals,
+                    mealName: mealName,
+                    logDate: logDate,
+                    onAddMeal: addCustomMealEntries,
+                    onDeleteMeal: deleteCustomMeal
+                )
             }
-            .padding()
         }
         .background(AppColors.background)
         .navigationTitle("Add to \(mealName)")
@@ -81,11 +91,237 @@ struct AddFoodView: View {
             }
         }
     }
+
+    private func addCustomMealEntries(_ meal: CustomMeal) {
+        for item in meal.items {
+            guard let food = item.foodItem else { continue }
+            let entry = MealEntry(
+                date: logDate,
+                mealType: mealName,
+                servingGrams: item.servingGrams,
+                foodItem: food
+            )
+            modelContext.insert(entry)
+        }
+        dismiss()
+    }
+
+    private func deleteCustomMeal(_ meal: CustomMeal) {
+        modelContext.delete(meal)
+    }
 }
 
 // MARK: - Subcomponents
 
 private extension AddFoodView {
+
+    struct TabPicker: View {
+        @Binding var selectedTab: Int
+
+        var body: some View {
+            HStack(spacing: 0) {
+                TabButton(title: "Food", isSelected: selectedTab == 0) {
+                    selectedTab = 0
+                }
+                TabButton(title: "Custom Meals", isSelected: selectedTab == 1) {
+                    selectedTab = 1
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.sm)
+                    .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: CornerRadius.sm)
+                            .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                    )
+            )
+        }
+    }
+
+    struct TabButton: View {
+        let title: String
+        let isSelected: Bool
+        let action: () -> Void
+
+        var body: some View {
+            Button(action: action) {
+                Text(title)
+                    .foregroundColor(isSelected ? .black : AppColors.lightMacroTextColor)
+                    .font(.custom(Fonts.interSemiBold, size: FontSize.md))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.lg)
+                    .background(
+                        RoundedRectangle(cornerRadius: CornerRadius.sm)
+                            .fill(isSelected ? MacroColors.carbs : Color.clear)
+                    )
+            }
+        }
+    }
+
+    struct FoodTabContent: View {
+        @Binding var searchText: String
+        let isSearching: Bool
+        let searchResults: [USDAFoodResult]
+        let recentFoods: [FoodItem]
+        let mealName: String
+        let logDate: Date
+
+        var body: some View {
+            ScrollView {
+                VStack(spacing: Spacing.xl) {
+                    SearchBar(searchText: $searchText)
+                    ScanBarcodeButton()
+
+                    if isSearching {
+                        SwiftUI.ProgressView()
+                            .tint(.white)
+                            .padding(.vertical, Spacing.xxl)
+                    } else if !searchText.isEmpty {
+                        SearchResultsSection(results: searchResults, mealName: mealName, logDate: logDate)
+                    } else {
+                        RecentSection(recentFoods: recentFoods, mealName: mealName, logDate: logDate)
+                        YesterdaySection()
+                    }
+                }
+                .padding()
+            }
+        }
+    }
+
+    struct CustomMealsTabContent: View {
+        let customMeals: [CustomMeal]
+        let mealName: String
+        let logDate: Date
+        let onAddMeal: (CustomMeal) -> Void
+        let onDeleteMeal: (CustomMeal) -> Void
+
+        var body: some View {
+            ScrollView {
+                VStack(spacing: Spacing.lg) {
+                    if customMeals.isEmpty {
+                        VStack(spacing: Spacing.lg) {
+                            Image(systemName: "tray")
+                                .font(.system(size: 32))
+                                .foregroundColor(AppColors.lightMacroTextColor)
+                            Text("No custom meals yet")
+                                .foregroundColor(AppColors.lightMacroTextColor)
+                                .font(.custom(Fonts.interRegular, size: FontSize.lg))
+                            Text("Save a meal from any meal card using the ··· button")
+                                .foregroundColor(AppColors.lightMacroTextColor)
+                                .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.vertical, Spacing.xxl)
+                    } else {
+                        ForEach(customMeals) { meal in
+                            CustomMealRow(meal: meal, onAdd: { onAddMeal(meal) }, onDelete: { onDeleteMeal(meal) })
+                        }
+                    }
+                }
+                .padding()
+            }
+        }
+    }
+
+    struct CustomMealRow: View {
+        let meal: CustomMeal
+        let onAdd: () -> Void
+        let onDelete: () -> Void
+
+        private var totalCalories: Int {
+            Int(meal.items.reduce(0) { $0 + $1.calories })
+        }
+
+        private var totalProtein: Int {
+            Int(meal.items.reduce(0) { $0 + $1.protein })
+        }
+
+        private var totalCarbs: Int {
+            Int(meal.items.reduce(0) { $0 + $1.carbs })
+        }
+
+        private var totalFat: Int {
+            Int(meal.items.reduce(0) { $0 + $1.fat })
+        }
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                HStack {
+                    Text(meal.name)
+                        .foregroundColor(.white)
+                        .font(.custom(Fonts.interSemiBold, size: FontSize.xl))
+
+                    Spacer()
+
+                    Button(action: onDelete) {
+                        Image(systemName: "trash")
+                            .font(.system(size: IconSize.lg))
+                            .foregroundColor(AppColors.lightMacroTextColor)
+                    }
+                }
+
+                Text("\(meal.items.count) item\(meal.items.count == 1 ? "" : "s")")
+                    .foregroundColor(AppColors.lightMacroTextColor)
+                    .font(.custom(Fonts.interRegular, size: FontSize.sm))
+
+                ForEach(meal.items) { item in
+                    HStack {
+                        Text(item.foodItem?.name.capitalized ?? "Unknown")
+                            .foregroundColor(AppColors.macroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.md))
+                        Spacer()
+                        Text("\(Int(item.servingGrams))g · \(Int(item.calories)) kcal")
+                            .foregroundColor(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                    }
+                }
+
+                HStack(spacing: Spacing.lg) {
+                    HStack(spacing: Spacing.xs) {
+                        Circle().fill(MacroColors.protein).frame(width: IconSize.md, height: IconSize.md)
+                        Text("\(totalProtein)p")
+                            .foregroundStyle(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                    }
+                    HStack(spacing: Spacing.xs) {
+                        Circle().fill(MacroColors.carbs).frame(width: IconSize.md, height: IconSize.md)
+                        Text("\(totalCarbs)c")
+                            .foregroundStyle(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                    }
+                    HStack(spacing: Spacing.xs) {
+                        Circle().fill(MacroColors.fats).frame(width: IconSize.md, height: IconSize.md)
+                        Text("\(totalFat)f")
+                            .foregroundStyle(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                    }
+                    Spacer()
+                    Text("\(totalCalories) kcal")
+                        .foregroundColor(AppColors.macroTextColor)
+                        .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                }
+
+                Button(action: onAdd) {
+                    Text("Add to Meal")
+                        .foregroundColor(.black)
+                        .font(.custom(Fonts.interSemiBold, size: FontSize.md))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, Spacing.lg)
+                        .background(MacroColors.carbs)
+                        .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+                }
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.sm)
+                    .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: CornerRadius.sm)
+                            .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                    )
+            )
+        }
+    }
 
     struct SearchBar: View {
         @Binding var searchText: String
