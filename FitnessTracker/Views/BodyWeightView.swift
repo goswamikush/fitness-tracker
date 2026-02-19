@@ -61,15 +61,19 @@ struct BodyWeightView: View {
             AppColors.background
                 .ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: Spacing.xl) {
-                    Header()
-                    WeightSummaryCards(entries: entries)
-                    DateRangePicker(selectedRange: $selectedRange)
-                    WeightChart(entries: filteredEntries, selectedRange: selectedRange)
-                    WeightHistorySection(entries: filteredEntries, onSelect: { selectedEntry = $0 })
+            VStack(spacing: 0) {
+                Header()
+                    .padding(.horizontal)
+
+                ScrollView {
+                    VStack(spacing: Spacing.xl) {
+                        WeightSummaryCards(entries: entries)
+                        DateRangePicker(selectedRange: $selectedRange)
+                        WeightChart(entries: filteredEntries, selectedRange: selectedRange)
+                        WeightHistorySection(entries: filteredEntries, onSelect: { selectedEntry = $0 })
+                    }
+                    .padding(.horizontal)
                 }
-                .padding(.horizontal)
             }
         }
         .navigationBarTitleDisplayMode(.large)

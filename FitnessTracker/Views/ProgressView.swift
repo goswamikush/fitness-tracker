@@ -12,30 +12,106 @@ import Charts
 struct ProgressView: View {
 
     @Query(sort: \WeightEntry.date) private var weightEntries: [WeightEntry]
+    @Query(sort: \MealEntry.date) private var allMealEntries: [MealEntry]
 
-    // Goal consistency: true = hit goal, false = missed
-    private let calorieConsistency: [Bool] = [true, true, false, true, true, true, true]
-    private let proteinConsistency: [Bool] = [true, false, false, true, true, true, false]
-    private let waterConsistency: [Bool] = [true, true, true, true, true, true, true]
+    private let calorieGoal = 2400
+    private let proteinGoal = 180
+
+    // Last 7 days (today + 6 prior), ordered Mon→Sun
+    private var weekDates: [Date] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        // Find the Monday of the current week
+        let weekday = cal.component(.weekday, from: today)
+        // weekday: 1=Sun, 2=Mon, ...
+        let daysFromMonday = (weekday + 5) % 7
+        let monday = cal.date(byAdding: .day, value: -daysFromMonday, to: today)!
+        return (0..<7).map { cal.date(byAdding: .day, value: $0, to: monday)! }
+    }
+
+    private func entries(for date: Date) -> [MealEntry] {
+        let cal = Calendar.current
+        return allMealEntries.filter { cal.isDate($0.date, inSameDayAs: date) }
+    }
+
+    private func dailyCalories(for date: Date) -> Int {
+        Int(entries(for: date).reduce(0) { $0 + $1.calories })
+    }
+
+    private func dailyProtein(for date: Date) -> Int {
+        Int(entries(for: date).reduce(0) { $0 + $1.protein })
+    }
+
+    // Only count days up to and including today that have at least some logged food
+    private var daysWithData: [Date] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return weekDates.filter { $0 <= today && !entries(for: $0).isEmpty }
+    }
+
+    private var avgCalories: Int {
+        guard !daysWithData.isEmpty else { return 0 }
+        let total = daysWithData.reduce(0) { $0 + dailyCalories(for: $1) }
+        return total / daysWithData.count
+    }
+
+    private var avgProtein: Int {
+        guard !daysWithData.isEmpty else { return 0 }
+        let total = daysWithData.reduce(0) { $0 + dailyProtein(for: $1) }
+        return total / daysWithData.count
+    }
+
+    private var proteinConsistencyPercent: Int {
+        guard !daysWithData.isEmpty else { return 0 }
+        let hits = daysWithData.filter { dailyProtein(for: $0) >= proteinGoal }.count
+        return Int((Double(hits) / Double(daysWithData.count)) * 100)
+    }
+
+    private var calorieConsistency: [Bool?] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return weekDates.map { date in
+            guard date <= today, !entries(for: date).isEmpty else { return nil }
+            let cals = dailyCalories(for: date)
+            // "Hit" = within ±200 of goal
+            return abs(cals - calorieGoal) <= 200
+        }
+    }
+
+    private var proteinConsistency: [Bool?] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return weekDates.map { date in
+            guard date <= today, !entries(for: date).isEmpty else { return nil }
+            return dailyProtein(for: date) >= proteinGoal
+        }
+    }
 
     var body: some View {
         ZStack {
             AppColors.background
                 .ignoresSafeArea()
 
-            ScrollView {
-                VStack(spacing: Spacing.xl) {
-                    Header()
-                    SummaryGrid()
-                    WeightTrendCard(entries: weightEntries)
-                    GoalConsistencySection(
-                        calorieConsistency: calorieConsistency,
-                        proteinConsistency: proteinConsistency,
-                        waterConsistency: waterConsistency
-                    )
+            VStack(spacing: 0) {
+                Header()
+                    .padding(.horizontal)
+
+                ScrollView {
+                    VStack(spacing: Spacing.xl) {
+                        SummaryGrid(
+                            avgCalories: avgCalories,
+                            avgProtein: avgProtein,
+                            proteinConsistencyPercent: proteinConsistencyPercent
+                        )
+                        WeightTrendCard(entries: weightEntries)
+                        GoalConsistencySection(
+                            calorieConsistency: calorieConsistency,
+                            proteinConsistency: proteinConsistency
+                        )
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, Spacing.xxl)
                 }
-                .padding(.horizontal)
-                .padding(.bottom, Spacing.xxl)
             }
         }
         .navigationBarTitleDisplayMode(.large)
@@ -79,17 +155,31 @@ private extension ProgressView {
 private extension ProgressView {
 
     struct SummaryGrid: View {
+        let avgCalories: Int
+        let avgProtein: Int
+        let proteinConsistencyPercent: Int
+
         private let columns = [
             GridItem(.flexible(), spacing: Spacing.lg),
             GridItem(.flexible(), spacing: Spacing.lg),
         ]
 
+        private var formattedCalories: String {
+            if avgCalories >= 1000 {
+                let thousands = avgCalories / 1000
+                let hundreds = (avgCalories % 1000) / 100
+                // e.g. 1,850 → "1,850"
+                return "\(thousands),\(String(format: "%03d", avgCalories % 1000))"
+            }
+            return "\(avgCalories)"
+        }
+
         var body: some View {
             LazyVGrid(columns: columns, spacing: Spacing.lg) {
-                SummaryCard(icon: "flame", iconColor: MacroColors.fats, value: "1,850", unit: nil, subtitle: "Daily Average", badge: "TODAY")
-                SummaryCard(icon: "target", iconColor: MacroColors.protein, value: "140", unit: "g", subtitle: "95% consistency", badge: "TODAY")
-                SummaryCard(icon: "drop", iconColor: MacroColors.protein, value: "2.1", unit: "L", subtitle: "Daily Average", badge: "TODAY")
-                SummaryCard(icon: "figure.walk", iconColor: MacroColors.carbs, value: "8,432", unit: nil, subtitle: "Daily Average", badge: "TODAY")
+                SummaryCard(icon: "flame", iconColor: MacroColors.fats, value: formattedCalories, unit: nil, subtitle: "Daily Average", badge: "WEEK")
+                SummaryCard(icon: "target", iconColor: MacroColors.protein, value: "\(avgProtein)", unit: "g", subtitle: "\(proteinConsistencyPercent)% consistency", badge: "WEEK")
+                SummaryCard(icon: "drop", iconColor: MacroColors.protein, value: "n/a", unit: nil, subtitle: "Daily Average", badge: "WATER")
+                SummaryCard(icon: "figure.walk", iconColor: MacroColors.carbs, value: "n/a", unit: nil, subtitle: "Daily Average", badge: "STEPS")
             }
         }
     }
@@ -263,9 +353,8 @@ private extension ProgressView {
 private extension ProgressView {
 
     struct GoalConsistencySection: View {
-        let calorieConsistency: [Bool]
-        let proteinConsistency: [Bool]
-        let waterConsistency: [Bool]
+        let calorieConsistency: [Bool?]
+        let proteinConsistency: [Bool?]
 
         var body: some View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
@@ -281,11 +370,6 @@ private extension ProgressView {
                         .overlay(Color.white.opacity(0.06))
 
                     ConsistencyRow(label: "Protein", days: proteinConsistency, hitColor: MacroColors.protein)
-
-                    Divider()
-                        .overlay(Color.white.opacity(0.06))
-
-                    ConsistencyRow(label: "Water", days: waterConsistency, hitColor: Color(red: 80/255, green: 200/255, blue: 220/255))
                 }
                 .padding(Spacing.lg)
                 .background(
@@ -303,7 +387,7 @@ private extension ProgressView {
 
     struct ConsistencyRow: View {
         let label: String
-        let days: [Bool]
+        let days: [Bool?]
         var hitColor: Color = MacroColors.carbs
 
         private let dayLabels = ["M", "T", "W", "T", "F", "S", "S"]
@@ -326,23 +410,35 @@ private extension ProgressView {
                                 .font(.custom(Fonts.interMedium, size: FontSize.xs))
 
                             ZStack {
-                                if days[index] {
-                                    Circle()
-                                        .fill(hitColor.opacity(0.2))
-                                        .stroke(hitColor.opacity(0.5), lineWidth: 1)
-                                        .frame(width: 22, height: 22)
+                                if let hit = days[index] {
+                                    if hit {
+                                        Circle()
+                                            .fill(hitColor.opacity(0.2))
+                                            .stroke(hitColor.opacity(0.5), lineWidth: 1)
+                                            .frame(width: 22, height: 22)
 
-                                    Image(systemName: "checkmark")
-                                        .font(.system(size: 9, weight: .bold))
-                                        .foregroundStyle(hitColor)
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(hitColor)
+                                    } else {
+                                        Circle()
+                                            .fill(Color.white.opacity(0.08))
+                                            .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                                            .frame(width: 22, height: 22)
+
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 8, weight: .bold))
+                                            .foregroundStyle(AppColors.lightMacroTextColor)
+                                    }
                                 } else {
+                                    // No data / future day
                                     Circle()
-                                        .fill(Color.white.opacity(0.08))
-                                        .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                                        .fill(Color.white.opacity(0.04))
+                                        .stroke(Color.white.opacity(0.03), lineWidth: 1)
                                         .frame(width: 22, height: 22)
 
                                     Circle()
-                                        .fill(Color.white.opacity(0.25))
+                                        .fill(Color.white.opacity(0.15))
                                         .frame(width: 5, height: 5)
                                 }
                             }
@@ -360,5 +456,5 @@ private extension ProgressView {
     NavigationStack {
         ProgressView()
     }
-    .modelContainer(for: WeightEntry.self, inMemory: true)
+    .modelContainer(for: [WeightEntry.self, MealEntry.self, FoodItem.self], inMemory: true)
 }
