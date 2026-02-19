@@ -18,6 +18,8 @@ struct AddFoodView: View {
     @State private var searchResults: [USDAFoodResult] = []
     @State private var isSearching = false
     @State private var searchTask: Task<Void, Never>?
+    @State private var showingScanner = false
+    @State private var scannedFoodResult: USDAFoodResult?
     @Query(sort: \MealEntry.date, order: .reverse) private var allEntries: [MealEntry]
     @Query(sort: \CustomMeal.createdAt, order: .reverse) private var customMeals: [CustomMeal]
 
@@ -61,7 +63,8 @@ struct AddFoodView: View {
                     recentFoods: recentFoods,
                     yesterdayMealGroups: yesterdayMealGroups,
                     mealName: mealName,
-                    logDate: logDate
+                    logDate: logDate,
+                    onScanBarcode: { showingScanner = true }
                 )
             } else {
                 CustomMealsTabContent(
@@ -103,6 +106,25 @@ struct AddFoodView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showingScanner) {
+            BarcodeScannerView { barcode in
+                showingScanner = false
+                searchTask?.cancel()
+                searchTask = Task {
+                    do {
+                        let results = try await USDAService.shared.lookupBarcode(barcode)
+                        await MainActor.run {
+                            if let food = results.first {
+                                scannedFoodResult = food
+                            }
+                        }
+                    } catch {}
+                }
+            }
+        }
+        .navigationDestination(item: $scannedFoodResult) { result in
+            AddEntryView(usdaResult: result, mealName: mealName, logDate: logDate)
         }
     }
 
@@ -181,12 +203,13 @@ private extension AddFoodView {
         let yesterdayMealGroups: [(mealType: String, entries: [MealEntry])]
         let mealName: String
         let logDate: Date
+        let onScanBarcode: () -> Void
 
         var body: some View {
             ScrollView {
                 VStack(spacing: Spacing.xl) {
                     SearchBar(searchText: $searchText)
-                    ScanBarcodeButton()
+                    ScanBarcodeButton(action: onScanBarcode)
 
                     if isSearching {
                         SwiftUI.ProgressView()
@@ -368,20 +391,24 @@ private extension AddFoodView {
     }
 
     struct ScanBarcodeButton: View {
+        let action: () -> Void
+
         var body: some View {
-            HStack(spacing: Spacing.md) {
-                Image(systemName: "barcode.viewfinder")
-                    .foregroundColor(.white)
-                Text("Scan Barcode")
-                    .foregroundColor(.white)
-                    .font(.custom(Fonts.interMedium, size: FontSize.lg))
+            Button(action: action) {
+                HStack(spacing: Spacing.md) {
+                    Image(systemName: "barcode.viewfinder")
+                        .foregroundColor(.white)
+                    Text("Scan Barcode")
+                        .foregroundColor(.white)
+                        .font(.custom(Fonts.interMedium, size: FontSize.lg))
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                )
             }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: CornerRadius.sm)
-                    .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
-            )
         }
     }
 

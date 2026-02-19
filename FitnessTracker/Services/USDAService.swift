@@ -5,7 +5,7 @@
 
 import Foundation
 
-struct USDAFoodResult: Identifiable {
+struct USDAFoodResult: Identifiable, Hashable {
     let id: Int // fdcId
     let name: String
     let brand: String?
@@ -38,6 +38,56 @@ class USDAService {
     static let shared = USDAService()
     private let apiKey = Secrets.usdaAPIKey
     private let baseURL = "https://api.nal.usda.gov/fdc/v1/foods/search"
+
+    func lookupBarcode(_ barcode: String) async throws -> [USDAFoodResult] {
+        let urlString = "https://world.openfoodfacts.org/api/v0/product/\(barcode).json"
+        guard let url = URL(string: urlString) else { return [] }
+
+        let (data, _) = try await URLSession.shared.data(from: url)
+
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let status = json["status"] as? Int, status == 1,
+              let product = json["product"] as? [String: Any] else {
+            return []
+        }
+
+        let name = product["product_name"] as? String ?? "Unknown Product"
+        let brand = product["brands"] as? String
+        let nutriments = product["nutriments"] as? [String: Any] ?? [:]
+
+        func nutrient(_ key: String) -> Double {
+            (nutriments[key] as? Double) ?? 0.0
+        }
+
+        let servingSize = product["serving_quantity"] as? Double
+            ?? (product["serving_quantity"] as? String).flatMap(Double.init)
+        let servingSizeUnit = product["serving_quantity_unit"] as? String ?? "g"
+
+        let result = USDAFoodResult(
+            id: Int(barcode.suffix(9)) ?? barcode.hashValue,
+            name: name,
+            brand: brand,
+            caloriesPer100g: nutrient("energy-kcal_100g"),
+            proteinPer100g: nutrient("proteins_100g"),
+            carbsPer100g: nutrient("carbohydrates_100g"),
+            fatPer100g: nutrient("fat_100g"),
+            saturatedFatPer100g: nutrient("saturated-fat_100g"),
+            transFatPer100g: nutrient("trans-fat_100g"),
+            fiberPer100g: nutrient("fiber_100g"),
+            sugarPer100g: nutrient("sugars_100g"),
+            sodiumPer100g: nutrient("sodium_100g") * 1000,
+            cholesterolPer100g: nutrient("cholesterol_100g") * 1000,
+            calciumPer100g: nutrient("calcium_100g") * 1000,
+            ironPer100g: nutrient("iron_100g") * 1000,
+            vitaminAPer100g: nutrient("vitamin-a_100g"),
+            vitaminCPer100g: nutrient("vitamin-c_100g"),
+            vitaminDPer100g: nutrient("vitamin-d_100g"),
+            servingSize: servingSize,
+            servingSizeUnit: servingSizeUnit
+        )
+
+        return [result]
+    }
 
     func searchFoods(query: String) async throws -> [USDAFoodResult] {
         guard !query.isEmpty else { return [] }
