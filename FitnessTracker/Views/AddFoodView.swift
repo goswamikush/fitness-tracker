@@ -34,6 +34,19 @@ struct AddFoodView: View {
         return items
     }
 
+    private var yesterdayEntries: [MealEntry] {
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: logDate) ?? logDate
+        return allEntries.filter { Calendar.current.isDate($0.date, inSameDayAs: yesterday) }
+    }
+
+    private var yesterdayMealGroups: [(mealType: String, entries: [MealEntry])] {
+        let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
+        return mealTypes.compactMap { type in
+            let entries = yesterdayEntries.filter { $0.mealType == type }
+            return entries.isEmpty ? nil : (mealType: type, entries: entries)
+        }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             TabPicker(selectedTab: $selectedTab)
@@ -46,6 +59,7 @@ struct AddFoodView: View {
                     isSearching: isSearching,
                     searchResults: searchResults,
                     recentFoods: recentFoods,
+                    yesterdayMealGroups: yesterdayMealGroups,
                     mealName: mealName,
                     logDate: logDate
                 )
@@ -109,6 +123,7 @@ struct AddFoodView: View {
     private func deleteCustomMeal(_ meal: CustomMeal) {
         modelContext.delete(meal)
     }
+
 }
 
 // MARK: - Subcomponents
@@ -163,6 +178,7 @@ private extension AddFoodView {
         let isSearching: Bool
         let searchResults: [USDAFoodResult]
         let recentFoods: [FoodItem]
+        let yesterdayMealGroups: [(mealType: String, entries: [MealEntry])]
         let mealName: String
         let logDate: Date
 
@@ -180,7 +196,7 @@ private extension AddFoodView {
                         SearchResultsSection(results: searchResults, mealName: mealName, logDate: logDate)
                     } else {
                         RecentSection(recentFoods: recentFoods, mealName: mealName, logDate: logDate)
-                        YesterdaySection()
+                        YesterdaySection(mealGroups: yesterdayMealGroups, mealName: mealName, logDate: logDate)
                     }
                 }
                 .padding()
@@ -544,47 +560,65 @@ private extension AddFoodView {
     }
 
     struct YesterdayMealRow: View {
+        let mealType: String
+        let entries: [MealEntry]
         let mealName: String
-        let itemCount: String
-        let calories: String
+        let logDate: Date
+
+        private var totalCalories: Int {
+            Int(entries.reduce(0) { $0 + $1.calories })
+        }
 
         var body: some View {
-            HStack {
-                VStack(alignment: .leading, spacing: Spacing.sm) {
-                    Text(mealName)
-                        .foregroundColor(.white)
-                        .font(.custom(Fonts.interSemiBold, size: FontSize.lg))
-                    Text("\(itemCount) items \u{2022} \(calories) kcal")
+            NavigationLink(destination: ReviewMealEntriesView(
+                mealName: mealName,
+                sourceMealType: mealType,
+                logDate: logDate,
+                entries: entries
+            )) {
+                HStack {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        Text(mealType)
+                            .foregroundColor(.white)
+                            .font(.custom(Fonts.interSemiBold, size: FontSize.lg))
+                        Text("\(entries.count) item\(entries.count == 1 ? "" : "s") \u{2022} \(totalCalories) kcal")
+                            .foregroundColor(AppColors.macroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
                         .foregroundColor(AppColors.macroTextColor)
-                        .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                        .font(.system(size: IconSize.lg))
                 }
-
-                Spacer()
-
-                Image(systemName: "chevron.right")
-                    .foregroundColor(AppColors.macroTextColor)
-                    .font(.system(size: IconSize.lg))
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: CornerRadius.sm)
+                                .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                        )
+                )
             }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: CornerRadius.sm)
-                    .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: CornerRadius.sm)
-                            .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
-                    )
-            )
         }
     }
 
     struct YesterdaySection: View {
-        var body: some View {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                SectionHeader(title: "YESTERDAY'S MEALS")
+        let mealGroups: [(mealType: String, entries: [MealEntry])]
+        let mealName: String
+        let logDate: Date
 
-                YesterdayMealRow(mealName: "Lunch", itemCount: "2", calories: "545")
-                YesterdayMealRow(mealName: "Breakfast", itemCount: "2", calories: "425")
-                YesterdayMealRow(mealName: "Dinner", itemCount: "2", calories: "625")
+        var body: some View {
+            if !mealGroups.isEmpty {
+                VStack(alignment: .leading, spacing: Spacing.lg) {
+                    SectionHeader(title: "YESTERDAY'S MEALS")
+
+                    ForEach(mealGroups, id: \.mealType) { group in
+                        YesterdayMealRow(mealType: group.mealType, entries: group.entries, mealName: mealName, logDate: logDate)
+                    }
+                }
             }
         }
     }

@@ -55,14 +55,14 @@ struct SaveCustomMealView: View {
             ScrollView {
                 VStack(spacing: Spacing.xl) {
                     MealNameField(name: $customName)
-                    TotalsSummary(calories: totalCalories, protein: totalProtein, carbs: totalCarbs, fat: totalFat)
-                    ItemsList(items: $items)
+                    MealTotalsSummary(calories: totalCalories, protein: totalProtein, carbs: totalCarbs, fat: totalFat)
+                    MealItemsList(items: $items)
                 }
                 .padding()
                 .padding(.bottom, 80)
             }
 
-            SaveButton(calories: totalCalories) {
+            MealActionButton(title: "Save Custom Meal", calories: totalCalories) {
                 saveCustomMeal()
             }
         }
@@ -89,25 +89,7 @@ struct SaveCustomMealView: View {
     }
 }
 
-// MARK: - EditableItem
-
-struct EditableItem: Identifiable {
-    let id = UUID()
-    let foodItem: FoodItem
-    let name: String
-    var servingGrams: Double
-    let caloriesPer100g: Double
-    let proteinPer100g: Double
-    let carbsPer100g: Double
-    let fatPer100g: Double
-
-    var calories: Int { Int((caloriesPer100g * servingGrams) / 100) }
-    var protein: Int { Int((proteinPer100g * servingGrams) / 100) }
-    var carbs: Int { Int((carbsPer100g * servingGrams) / 100) }
-    var fat: Int { Int((fatPer100g * servingGrams) / 100) }
-}
-
-// MARK: - Subcomponents
+// MARK: - SaveCustomMealView-only subcomponents
 
 private extension SaveCustomMealView {
 
@@ -132,151 +114,172 @@ private extension SaveCustomMealView {
             }
         }
     }
+}
 
-    struct TotalsSummary: View {
-        let calories: Int
-        let protein: Int
-        let carbs: Int
-        let fat: Int
+// MARK: - EditableItem
 
-        var body: some View {
-            HStack {
-                Text("\(calories) kcal")
-                    .foregroundColor(.white)
-                    .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
+struct EditableItem: Identifiable {
+    let id = UUID()
+    let foodItem: FoodItem
+    let name: String
+    var servingGrams: Double
+    let caloriesPer100g: Double
+    let proteinPer100g: Double
+    let carbsPer100g: Double
+    let fatPer100g: Double
 
-                Spacer()
+    var calories: Int { Int((caloriesPer100g * servingGrams) / 100) }
+    var protein: Int { Int((proteinPer100g * servingGrams) / 100) }
+    var carbs: Int { Int((carbsPer100g * servingGrams) / 100) }
+    var fat: Int { Int((fatPer100g * servingGrams) / 100) }
+}
 
-                HStack(spacing: Spacing.lg) {
-                    MacroBadge(value: protein, suffix: "p", color: MacroColors.protein)
-                    MacroBadge(value: carbs, suffix: "c", color: MacroColors.carbs)
-                    MacroBadge(value: fat, suffix: "f", color: MacroColors.fats)
-                }
-            }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: CornerRadius.sm)
-                    .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: CornerRadius.sm)
-                            .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
-                    )
-            )
-        }
-    }
+// MARK: - Shared Meal Review Components
 
-    struct MacroBadge: View {
-        let value: Int
-        let suffix: String
-        let color: Color
+struct MealTotalsSummary: View {
+    let calories: Int
+    let protein: Int
+    let carbs: Int
+    let fat: Int
 
-        var body: some View {
-            HStack(spacing: Spacing.xs) {
-                Circle()
-                    .fill(color)
-                    .frame(width: IconSize.md, height: IconSize.md)
-                Text("\(value)\(suffix)")
-                    .foregroundStyle(AppColors.lightMacroTextColor)
-                    .font(.custom(Fonts.interRegular, size: FontSize.sm))
-            }
-        }
-    }
+    var body: some View {
+        HStack {
+            Text("\(calories) kcal")
+                .foregroundColor(.white)
+                .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
 
-    struct ItemsList: View {
-        @Binding var items: [EditableItem]
+            Spacer()
 
-        var body: some View {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                Text("ITEMS")
-                    .foregroundColor(AppColors.macroTextColor)
-                    .font(.custom(Fonts.interMedium, size: FontSize.xs))
-                    .tracking(1)
-
-                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                    EditableItemRow(item: $items[index]) {
-                        items.remove(at: index)
-                    }
-                }
-            }
-        }
-    }
-
-    struct EditableItemRow: View {
-        @Binding var item: EditableItem
-        let onRemove: () -> Void
-
-        var body: some View {
             HStack(spacing: Spacing.lg) {
-                NavigationLink(destination: AddEntryView(
-                    foodItem: item.foodItem,
-                    servingGrams: item.servingGrams,
-                    onUpdateServing: { newGrams in
-                        item.servingGrams = newGrams
-                    }
-                )) {
-                    HStack {
-                        VStack(alignment: .leading, spacing: Spacing.xs) {
-                            Text(item.name.capitalized)
-                                .foregroundColor(.white)
-                                .font(.custom(Fonts.interMedium, size: FontSize.md))
-                            Text("\(item.calories) kcal  ·  \(Int(item.servingGrams))g")
-                                .foregroundColor(AppColors.lightMacroTextColor)
-                                .font(.custom(Fonts.interRegular, size: FontSize.sm))
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: IconSize.lg, weight: .medium))
-                            .foregroundColor(AppColors.macroTextColor)
-                    }
-                }
-
-                Button(action: onRemove) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 16))
-                        .foregroundColor(AppColors.lightMacroTextColor)
-                }
+                MealMacroBadge(value: protein, suffix: "p", color: MacroColors.protein)
+                MealMacroBadge(value: carbs, suffix: "c", color: MacroColors.carbs)
+                MealMacroBadge(value: fat, suffix: "f", color: MacroColors.fats)
             }
-            .padding()
-            .background(
-                RoundedRectangle(cornerRadius: CornerRadius.sm)
-                    .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: CornerRadius.sm)
-                            .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
-                    )
-            )
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.sm)
+                .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                )
+        )
+    }
+}
+
+struct MealMacroBadge: View {
+    let value: Int
+    let suffix: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: Spacing.xs) {
+            Circle()
+                .fill(color)
+                .frame(width: IconSize.md, height: IconSize.md)
+            Text("\(value)\(suffix)")
+                .foregroundStyle(AppColors.lightMacroTextColor)
+                .font(.custom(Fonts.interRegular, size: FontSize.sm))
         }
     }
+}
 
-    struct SaveButton: View {
-        let calories: Int
-        let action: () -> Void
+struct MealItemsList: View {
+    @Binding var items: [EditableItem]
 
-        var body: some View {
-            Button(action: action) {
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("ITEMS")
+                .foregroundColor(AppColors.macroTextColor)
+                .font(.custom(Fonts.interMedium, size: FontSize.xs))
+                .tracking(1)
+
+            ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
+                MealEditableItemRow(item: $items[index]) {
+                    items.remove(at: index)
+                }
+            }
+        }
+    }
+}
+
+struct MealEditableItemRow: View {
+    @Binding var item: EditableItem
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: Spacing.lg) {
+            NavigationLink(destination: AddEntryView(
+                foodItem: item.foodItem,
+                servingGrams: item.servingGrams,
+                onUpdateServing: { newGrams in
+                    item.servingGrams = newGrams
+                }
+            )) {
                 HStack {
-                    Text("Save Custom Meal")
-                        .foregroundColor(.black)
-                        .font(.custom(Fonts.interSemiBold, size: FontSize.xl))
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text(item.name.capitalized)
+                            .foregroundColor(.white)
+                            .font(.custom(Fonts.interMedium, size: FontSize.md))
+                        Text("\(item.calories) kcal  ·  \(Int(item.servingGrams))g")
+                            .foregroundColor(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                    }
 
                     Spacer()
 
-                    HStack(spacing: Spacing.sm) {
-                        Text("\(calories)")
-                            .foregroundColor(.black)
-                            .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
-                        Text("kcal")
-                            .foregroundColor(.black.opacity(0.7))
-                            .font(.custom(Fonts.interRegular, size: FontSize.lg))
-                    }
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: IconSize.lg, weight: .medium))
+                        .foregroundColor(AppColors.macroTextColor)
                 }
-                .padding()
-                .background(MacroColors.carbs)
-                .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
-                .padding()
             }
+
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundColor(AppColors.lightMacroTextColor)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.sm)
+                .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                        .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                )
+        )
+    }
+}
+
+struct MealActionButton: View {
+    let title: String
+    let calories: Int
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Text(title)
+                    .foregroundColor(.black)
+                    .font(.custom(Fonts.interSemiBold, size: FontSize.xl))
+
+                Spacer()
+
+                HStack(spacing: Spacing.sm) {
+                    Text("\(calories)")
+                        .foregroundColor(.black)
+                        .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
+                    Text("kcal")
+                        .foregroundColor(.black.opacity(0.7))
+                        .font(.custom(Fonts.interRegular, size: FontSize.lg))
+                }
+            }
+            .padding()
+            .background(MacroColors.carbs)
+            .clipShape(RoundedRectangle(cornerRadius: CornerRadius.sm))
+            .padding()
         }
     }
 }
