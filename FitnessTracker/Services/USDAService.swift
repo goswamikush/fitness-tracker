@@ -38,6 +38,7 @@ class USDAService {
     static let shared = USDAService()
     private let apiKey = Secrets.usdaAPIKey
     private let baseURL = "https://api.nal.usda.gov/fdc/v1/foods/search"
+    private var cache: [String: [USDAFoodResult]] = [:]
 
     func lookupBarcode(_ barcode: String) async throws -> [USDAFoodResult] {
         let urlString = "https://world.openfoodfacts.org/api/v0/product/\(barcode).json"
@@ -92,11 +93,15 @@ class USDAService {
     func searchFoods(query: String) async throws -> [USDAFoodResult] {
         guard !query.isEmpty else { return [] }
 
+        let cacheKey = query.lowercased()
+        if let cached = cache[cacheKey] { return cached }
+
         var components = URLComponents(string: baseURL)!
         components.queryItems = [
             URLQueryItem(name: "api_key", value: apiKey),
             URLQueryItem(name: "query", value: query),
-            URLQueryItem(name: "pageSize", value: "25")
+            URLQueryItem(name: "dataType", value: "Branded"),
+            URLQueryItem(name: "pageSize", value: "10")
         ]
 
         guard let url = components.url else { return [] }
@@ -108,7 +113,7 @@ class USDAService {
             return []
         }
 
-        return foods.compactMap { food -> USDAFoodResult? in
+        let results = foods.compactMap { food -> USDAFoodResult? in
             guard let fdcId = food["fdcId"] as? Int,
                   let description = food["description"] as? String else {
                 return nil
@@ -172,5 +177,8 @@ class USDAService {
                 servingSizeUnit: servingSizeUnit
             )
         }
+
+        cache[cacheKey] = results
+        return results
     }
 }

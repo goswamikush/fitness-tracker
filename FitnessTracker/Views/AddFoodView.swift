@@ -89,7 +89,7 @@ struct AddFoodView: View {
             }
             isSearching = true
             searchTask = Task {
-                try? await Task.sleep(nanoseconds: 400_000_000)
+                try? await Task.sleep(nanoseconds: 300_000_000)
                 guard !Task.isCancelled else { return }
                 do {
                     let results = try await USDAService.shared.searchFoods(query: newValue)
