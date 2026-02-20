@@ -110,6 +110,7 @@ struct ProgressView: View {
                         )
                     }
                     .padding(.horizontal)
+                    .padding(.top, Spacing.lg)
                     .padding(.bottom, Spacing.xxl)
                 }
             }

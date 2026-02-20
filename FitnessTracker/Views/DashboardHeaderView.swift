@@ -25,15 +25,30 @@ struct DashboardHeaderView: View {
         VStack(spacing: 20) {
             DateBar(selectedDate: $selectedDate)
             CaloriesSection(consumed: consumedCalories, goal: calorieGoal, remaining: remaining)
-            MacroRingsSection(
-                protein: Double(consumedProtein),
-                carbs: Double(consumedCarbs),
-                fat: Double(consumedFat),
-                proteinGoal: proteinGoal,
-                carbsGoal: carbsGoal,
-                fatGoal: fatGoal,
-                selectedDate: selectedDate
-            )
+            NavigationLink(destination: NutritionAnalysisView(selectedDate: selectedDate)) {
+                HStack(spacing: Spacing.md) {
+                    Image(systemName: "chart.pie")
+                        .font(.system(size: FontSize.sm))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [MacroColors.protein, MacroColors.carbs, MacroColors.fats],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    Text("View Nutrient Breakdown")
+                        .font(.custom(Fonts.interMedium, size: FontSize.sm))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10))
+                }
+                .foregroundStyle(AppColors.lightMacroTextColor)
+                .padding(.horizontal, Spacing.xl)
+                .padding(.vertical, Spacing.md)
+                .background(
+                    Capsule()
+                        .fill(Color.white.opacity(0.08))
+                )
+            }
         }
     }
 }
@@ -66,6 +81,7 @@ private extension DashboardHeaderView {
                     showDatePicker = true
                 } label: {
                     Image(systemName: "calendar")
+                        .font(.system(size: 18))
                         .foregroundColor(AppColors.lightMacroTextColor)
                 }
 
@@ -75,20 +91,24 @@ private extension DashboardHeaderView {
                     selectedDate = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) ?? selectedDate
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.lightMacroTextColor)
                 }
 
-                Text(dateLabel)
-                    .foregroundStyle(.white)
-                    .font(.custom(Fonts.interSemiBold, size: 14))
-                    .padding(.horizontal, Spacing.md)
+                Button {
+                    showDatePicker = true
+                } label: {
+                    Text(dateLabel)
+                        .foregroundStyle(.white)
+                        .font(.custom(Fonts.interSemiBold, size: 18))
+                        .padding(.horizontal, Spacing.lg)
+                }
 
                 Button {
                     selectedDate = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) ?? selectedDate
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(AppColors.lightMacroTextColor)
                 }
 
@@ -96,9 +116,11 @@ private extension DashboardHeaderView {
 
                 // Invisible icon to balance layout
                 Image(systemName: "calendar")
+                    .font(.system(size: 18))
                     .foregroundColor(.clear)
             }
             .padding(.horizontal)
+            .padding(.top, Spacing.lg)
             .sheet(isPresented: $showDatePicker) {
                 DatePickerSheet(selectedDate: $selectedDate, isPresented: $showDatePicker)
             }
@@ -192,42 +214,20 @@ private extension DashboardHeaderView {
         }
     }
 
-    struct MacroRingsSection: View {
-        let protein: Double
-        let carbs: Double
-        let fat: Double
-        let proteinGoal: Double
-        let carbsGoal: Double
-        let fatGoal: Double
-        let selectedDate: Date
+}
 
-        var body: some View {
-            VStack(spacing: Spacing.xl) {
-                HStack(spacing: 50) {
-                    MacroRing(current: protein, goal: proteinGoal, color: MacroColors.protein, label: "Protein")
-                    MacroRing(current: carbs, goal: carbsGoal, color: MacroColors.carbs, label: "Carbs")
-                    MacroRing(current: fat, goal: fatGoal, color: MacroColors.fats, label: "Fat")
-                }
+private struct PieSlice: Shape {
+    let startAngle: Angle
+    let endAngle: Angle
 
-                NavigationLink(destination: NutritionAnalysisView(selectedDate: selectedDate)) {
-                    HStack(spacing: Spacing.md) {
-                        Image(systemName: "chart.pie")
-                            .font(.system(size: FontSize.sm))
-                        Text("View Nutrient Breakdown")
-                            .font(.custom(Fonts.interMedium, size: FontSize.sm))
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 10))
-                    }
-                    .foregroundStyle(AppColors.lightMacroTextColor)
-                    .padding(.horizontal, Spacing.xl)
-                    .padding(.vertical, Spacing.md)
-                    .background(
-                        Capsule()
-                            .fill(Color.white.opacity(0.08))
-                    )
-                }
-            }
-        }
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
+        path.move(to: center)
+        path.addArc(center: center, radius: radius, startAngle: startAngle - .degrees(90), endAngle: endAngle - .degrees(90), clockwise: false)
+        path.closeSubpath()
+        return path
     }
 }
 

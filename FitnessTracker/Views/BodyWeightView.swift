@@ -73,6 +73,7 @@ struct BodyWeightView: View {
                         WeightHistorySection(entries: filteredEntries, onSelect: { selectedEntry = $0 })
                     }
                     .padding(.horizontal)
+                    .padding(.top, Spacing.lg)
                 }
             }
         }
