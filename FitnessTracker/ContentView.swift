@@ -9,35 +9,38 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @State private var selectedTab = 0
+    @State private var selectedTab = 1
 
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab(value: 0) {
                 NavigationStack {
-                    DashboardView()
+                    BodyWeightView()
                 }
             } label: {
-                Image(systemName: "house")
-                Text("Log")
+                Image("lucide-user")
+                    .renderingMode(.template)
+                Text("Body")
             }
 
             Tab(value: 1) {
                 NavigationStack {
-                    ProgressView()
+                    DashboardView()
                 }
             } label: {
-                Image(systemName: "target")
-                Text("Progress")
+                Image("lucide-notebook")
+                    .renderingMode(.template)
+                Text("Log")
             }
 
             Tab(value: 2) {
                 NavigationStack {
-                    BodyWeightView()
+                    ProgressView()
                 }
             } label: {
-                Image(systemName: "scale.3d")
-                Text("Body")
+                Image("chart-pie")
+                    .renderingMode(.template)
+                Text("Progress")
             }
         }
         .tint(MacroColors.carbs)
