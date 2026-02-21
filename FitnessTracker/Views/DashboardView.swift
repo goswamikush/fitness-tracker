@@ -10,6 +10,7 @@ import SwiftData
 
 struct DashboardView: View {
     @Query(sort: \MealEntry.date) private var allEntries: [MealEntry]
+    @Query(sort: \WaterEntry.date) private var allWaterEntries: [WaterEntry]
     @State private var selectedDate = Date()
 
     private let mealTypes = ["Breakfast", "Lunch", "Dinner", "Snack"]
@@ -42,6 +43,10 @@ struct DashboardView: View {
         selectedDayEntries.count
     }
 
+    private var selectedDayWaterEntries: [WaterEntry] {
+        allWaterEntries.filter { Calendar.current.isDate($0.date, inSameDayAs: selectedDate) }
+    }
+
     var body: some View {
         ZStack {
             AppColors.background
@@ -64,6 +69,10 @@ struct DashboardView: View {
                         ForEach(mealTypes, id: \.self) { mealType in
                             MealCard(mealName: mealType, entries: entries(for: mealType), logDate: selectedDate)
                         }
+
+                        WaterSectionHeader()
+
+                        WaterCard(entries: selectedDayWaterEntries, logDate: selectedDate)
                     }
                     .padding(.horizontal)
                 }
@@ -97,6 +106,17 @@ private extension DashboardView {
                         Capsule()
                             .fill(Color.white.opacity(0.08))
                     )
+            }
+        }
+    }
+
+    struct WaterSectionHeader: View {
+        var body: some View {
+            HStack {
+                Text("Water")
+                    .foregroundStyle(.white)
+                    .font(.custom(Fonts.outfitSemiBold, size: 22))
+                Spacer()
             }
         }
     }
