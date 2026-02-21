@@ -35,6 +35,7 @@ struct AddEntryView: View {
     let initialServingSize: Double?
     let servingSizeUnit: String?
     var onUpdateServing: ((Double) -> Void)?
+    var entryToEdit: MealEntry?
 
     @State private var servingGrams: Double
     @State private var selectedUnit: ServingUnit
@@ -62,6 +63,8 @@ struct AddEntryView: View {
         self.vitaminDPer100g = usdaResult.vitaminDPer100g
         self.initialServingSize = usdaResult.servingSize
         self.servingSizeUnit = usdaResult.servingSizeUnit
+        self.onUpdateServing = nil
+        self.entryToEdit = nil
         let units = ServingUnit.availableUnits(foodServingSize: usdaResult.servingSize, foodServingSizeUnit: usdaResult.servingSizeUnit)
         self._selectedUnit = State(initialValue: units.first ?? .grams)
         self._servingGrams = State(initialValue: usdaResult.servingSize ?? 100)
@@ -90,9 +93,43 @@ struct AddEntryView: View {
         self.vitaminDPer100g = foodItem.vitaminDPer100g
         self.initialServingSize = foodItem.servingSize
         self.servingSizeUnit = foodItem.servingSizeUnit
+        self.onUpdateServing = nil
+        self.entryToEdit = nil
         let units = ServingUnit.availableUnits(foodServingSize: foodItem.servingSize, foodServingSizeUnit: foodItem.servingSizeUnit)
         self._selectedUnit = State(initialValue: units.first ?? .grams)
         self._servingGrams = State(initialValue: foodItem.servingSize ?? 100)
+    }
+
+    init(entry: MealEntry) {
+        let food = entry.foodItem
+        self.entryToEdit = entry
+        self.fdcId = food?.fdcId ?? 0
+        self.foodName = food?.name ?? "Unknown"
+        self.brand = food?.brand ?? ""
+        self.mealName = entry.mealType
+        self.logDate = entry.date
+        self.caloriesPer100g = food?.caloriesPer100g ?? 0
+        self.proteinPer100g = food?.proteinPer100g ?? 0
+        self.carbsPer100g = food?.carbsPer100g ?? 0
+        self.fatPer100g = food?.fatPer100g ?? 0
+        self.saturatedFatPer100g = food?.saturatedFatPer100g ?? 0
+        self.transFatPer100g = food?.transFatPer100g ?? 0
+        self.fiberPer100g = food?.fiberPer100g ?? 0
+        self.sugarPer100g = food?.sugarPer100g ?? 0
+        self.sodiumPer100g = food?.sodiumPer100g ?? 0
+        self.cholesterolPer100g = food?.cholesterolPer100g ?? 0
+        self.calciumPer100g = food?.calciumPer100g ?? 0
+        self.ironPer100g = food?.ironPer100g ?? 0
+        self.vitaminAPer100g = food?.vitaminAPer100g ?? 0
+        self.vitaminCPer100g = food?.vitaminCPer100g ?? 0
+        self.vitaminDPer100g = food?.vitaminDPer100g ?? 0
+        self.initialServingSize = food?.servingSize
+        self.servingSizeUnit = food?.servingSizeUnit
+        self.onUpdateServing = nil
+        let units = ServingUnit.availableUnits(foodServingSize: food?.servingSize, foodServingSizeUnit: food?.servingSizeUnit)
+        let matchedUnit = units.first(where: { $0.label == entry.servingUnit }) ?? units.first ?? .grams
+        self._selectedUnit = State(initialValue: matchedUnit)
+        self._servingGrams = State(initialValue: entry.servingGrams)
     }
 
     init(foodItem: FoodItem, servingGrams: Double, onUpdateServing: @escaping (Double) -> Void) {
@@ -119,6 +156,7 @@ struct AddEntryView: View {
         self.initialServingSize = foodItem.servingSize
         self.servingSizeUnit = foodItem.servingSizeUnit
         self.onUpdateServing = onUpdateServing
+        self.entryToEdit = nil
         let units = ServingUnit.availableUnits(foodServingSize: foodItem.servingSize, foodServingSizeUnit: foodItem.servingSizeUnit)
         self._selectedUnit = State(initialValue: units.first ?? .grams)
         self._servingGrams = State(initialValue: servingGrams)
@@ -172,8 +210,13 @@ struct AddEntryView: View {
                 .padding(.bottom, 80)
             }
 
-            AddToMealButton(title: onUpdateServing != nil ? "Update Serving" : "Add to Meal", calories: calories) {
-                if let onUpdate = onUpdateServing {
+            AddToMealButton(title: entryToEdit != nil || onUpdateServing != nil ? "Update Serving" : "Add to Meal", calories: calories) {
+                if let entry = entryToEdit {
+                    entry.servingGrams = servingGrams
+                    entry.servingUnit = selectedUnit.label
+                    entry.servingQuantity = selectedUnit.fromGrams(servingGrams)
+                    dismiss()
+                } else if let onUpdate = onUpdateServing {
                     onUpdate(servingGrams)
                     dismiss()
                 } else {
@@ -182,7 +225,7 @@ struct AddEntryView: View {
             }
         }
         .background(AppColors.background)
-        .navigationTitle(onUpdateServing != nil ? "Edit Serving" : "Add Entry")
+        .navigationTitle(entryToEdit != nil || onUpdateServing != nil ? "Edit Serving" : "Add Entry")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
     }

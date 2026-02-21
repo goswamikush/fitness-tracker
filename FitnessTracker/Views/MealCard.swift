@@ -127,6 +127,7 @@ private extension MealCard {
         let totalFat: Int
         @Binding var isExpanded: Bool
         let onDelete: (MealEntry) -> Void
+        @State private var editingEntry: MealEntry?
 
         var body: some View {
             VStack(spacing: 0) {
@@ -135,14 +136,19 @@ private extension MealCard {
 
                 List {
                     ForEach(entries) { entry in
-                        FoodItemRow(
-                            name: entry.foodItem?.name ?? "Unknown",
-                            calories: Int(entry.calories),
-                            protein: Int(entry.protein),
-                            carbs: Int(entry.carbs),
-                            fat: Int(entry.fat),
-                            servingDisplay: entry.servingDisplay
-                        )
+                        Button {
+                            editingEntry = entry
+                        } label: {
+                            FoodItemRow(
+                                name: entry.foodItem?.name ?? "Unknown",
+                                calories: Int(entry.calories),
+                                protein: Int(entry.protein),
+                                carbs: Int(entry.carbs),
+                                fat: Int(entry.fat),
+                                servingDisplay: entry.servingDisplay
+                            )
+                        }
+                        .buttonStyle(.plain)
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 16))
                         .listRowSeparator(.hidden)
@@ -162,6 +168,9 @@ private extension MealCard {
                 .scrollContentBackground(.hidden)
                 .frame(height: CGFloat(entries.count) * 56)
                 .scrollDisabled(true)
+                .navigationDestination(item: $editingEntry) { entry in
+                    AddEntryView(entry: entry)
+                }
 
                 Footer(totalCalories: totalCalories, totalProtein: totalProtein, totalCarbs: totalCarbs, totalFat: totalFat)
             }
