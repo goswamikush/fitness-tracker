@@ -99,6 +99,48 @@ struct ProgressView: View {
         }
     }
 
+    private func dailyCarbs(for date: Date) -> Int {
+        Int(entries(for: date).reduce(0) { $0 + $1.carbs })
+    }
+
+    private func dailyFat(for date: Date) -> Int {
+        Int(entries(for: date).reduce(0) { $0 + $1.fat })
+    }
+
+    private var carbsConsistency: [Bool?] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return weekDates.map { date in
+            guard date <= today, !entries(for: date).isEmpty else { return nil }
+            let c = dailyCarbs(for: date)
+            return abs(c - userGoals.carbsGoal) <= max(userGoals.carbsGoal / 5, 5)
+        }
+    }
+
+    private var fatConsistency: [Bool?] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return weekDates.map { date in
+            guard date <= today, !entries(for: date).isEmpty else { return nil }
+            let f = dailyFat(for: date)
+            return abs(f - userGoals.fatGoal) <= max(userGoals.fatGoal / 5, 3)
+        }
+    }
+
+    private func consistencyPercent(_ days: [Bool?]) -> Int {
+        let logged = days.compactMap { $0 }
+        guard !logged.isEmpty else { return 0 }
+        return Int((Double(logged.filter { $0 }.count) / Double(logged.count)) * 100)
+    }
+
+    private var overallConsistencyScore: Int {
+        let c  = Double(consistencyPercent(calorieConsistency))
+        let p  = Double(consistencyPercent(proteinConsistency))
+        let cb = Double(consistencyPercent(carbsConsistency))
+        let f  = Double(consistencyPercent(fatConsistency))
+        return Int((c * 0.75 + (p + cb + f) * (0.25 / 3)).rounded())
+    }
+
     var body: some View {
         ZStack {
             AppColors.background
@@ -118,7 +160,14 @@ struct ProgressView: View {
                         WeightTrendCard(entries: weightEntries, onBodyTap: onBodyTap)
                         GoalConsistencySection(
                             calorieConsistency: calorieConsistency,
-                            proteinConsistency: proteinConsistency
+                            proteinConsistency: proteinConsistency,
+                            carbsConsistency: carbsConsistency,
+                            fatConsistency: fatConsistency,
+                            calPercent: consistencyPercent(calorieConsistency),
+                            proteinPercent: consistencyPercent(proteinConsistency),
+                            carbsPercent: consistencyPercent(carbsConsistency),
+                            fatPercent: consistencyPercent(fatConsistency),
+                            overallScore: overallConsistencyScore
                         )
                     }
                     .padding(.horizontal)
@@ -224,8 +273,6 @@ private extension ProgressView {
             LazyVGrid(columns: columns, spacing: Spacing.lg) {
                 SummaryCard(icon: "flame", iconColor: MacroColors.fats, value: formattedCalories, unit: nil, subtitle: "Daily Average", badge: "WEEK")
                 SummaryCard(icon: "target", iconColor: MacroColors.protein, value: "\(avgProtein)", unit: "g", subtitle: "\(proteinConsistencyPercent)% consistency", badge: "WEEK")
-                SummaryCard(icon: "drop", iconColor: MacroColors.protein, value: "n/a", unit: nil, subtitle: "Daily Average", badge: "WATER")
-                SummaryCard(icon: "figure.walk", iconColor: MacroColors.carbs, value: "n/a", unit: nil, subtitle: "Daily Average", badge: "STEPS")
             }
         }
     }
@@ -404,23 +451,76 @@ private extension ProgressView {
     struct GoalConsistencySection: View {
         let calorieConsistency: [Bool?]
         let proteinConsistency: [Bool?]
+        let carbsConsistency: [Bool?]
+        let fatConsistency: [Bool?]
+        let calPercent: Int
+        let proteinPercent: Int
+        let carbsPercent: Int
+        let fatPercent: Int
+        let overallScore: Int
+
+        @State private var showDetail = false
+
+        private var scoreColor: Color {
+            if overallScore >= 80 { return MacroColors.carbs }
+            if overallScore >= 60 { return MacroColors.calories }
+            if overallScore >= 40 { return MacroColors.fats }
+            return AppColors.negative
+        }
 
         var body: some View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 Text("GOAL CONSISTENCY")
-                    .foregroundStyle(Color(red: 161/255, green: 161/255, blue: 170/255))
+                    .foregroundStyle(AppColors.lightMacroTextColor)
                     .font(.custom(Fonts.outfitBold, size: FontSize.xs))
                     .tracking(1)
 
                 VStack(spacing: 0) {
-                    ConsistencyRow(label: "Calories", days: calorieConsistency, hitColor: MacroColors.calories)
+                    // Overall score row — tappable
+                    Button { showDetail = true } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Overall Score")
+                                    .foregroundStyle(AppColors.lightMacroTextColor)
+                                    .font(.custom(Fonts.interMedium, size: FontSize.sm))
+                                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                                    Text("\(overallScore)")
+                                        .foregroundStyle(scoreColor)
+                                        .font(.custom(Fonts.outfitSemiBold, size: 36))
+                                    Text("%")
+                                        .foregroundStyle(scoreColor)
+                                        .font(.custom(Fonts.outfitSemiBold, size: 20))
+                                }
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(AppColors.lightMacroTextColor)
+                        }
+                        .padding(Spacing.lg)
+                    }
+                    .buttonStyle(.plain)
 
-                    Divider()
-                        .overlay(Color.white.opacity(0.06))
+                    Divider().overlay(Color.white.opacity(0.06))
+
+                    ConsistencyRow(label: "Calories", days: calorieConsistency, hitColor: MacroColors.calories)
+                        .padding(.horizontal, Spacing.lg)
+
+                    Divider().overlay(Color.white.opacity(0.06))
 
                     ConsistencyRow(label: "Protein", days: proteinConsistency, hitColor: MacroColors.protein)
+                        .padding(.horizontal, Spacing.lg)
+
+                    Divider().overlay(Color.white.opacity(0.06))
+
+                    ConsistencyRow(label: "Carbs", days: carbsConsistency, hitColor: MacroColors.carbs)
+                        .padding(.horizontal, Spacing.lg)
+
+                    Divider().overlay(Color.white.opacity(0.06))
+
+                    ConsistencyRow(label: "Fat", days: fatConsistency, hitColor: MacroColors.fats)
+                        .padding(.horizontal, Spacing.lg)
                 }
-                .padding(Spacing.lg)
                 .background(
                     RoundedRectangle(cornerRadius: CornerRadius.sm)
                         .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
@@ -429,6 +529,19 @@ private extension ProgressView {
                                 .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
                         )
                         .shadow(color: .black.opacity(CardStyle.shadowOpacity), radius: CardStyle.shadowRadius, y: CardStyle.shadowY)
+                )
+            }
+            .sheet(isPresented: $showDetail) {
+                ConsistencyDetailSheet(
+                    calorieConsistency: calorieConsistency,
+                    proteinConsistency: proteinConsistency,
+                    carbsConsistency: carbsConsistency,
+                    fatConsistency: fatConsistency,
+                    calPercent: calPercent,
+                    proteinPercent: proteinPercent,
+                    carbsPercent: carbsPercent,
+                    fatPercent: fatPercent,
+                    overallScore: overallScore
                 )
             }
         }
@@ -445,11 +558,8 @@ private extension ProgressView {
             HStack(spacing: 0) {
                 Text(label)
                     .foregroundStyle(.white)
-                    .font(.custom(Fonts.interSemiBold, size: FontSize.lg))
-                    .frame(width: 80, alignment: .leading)
-
-                Spacer()
-                    .frame(width: 12)
+                    .font(.custom(Fonts.interSemiBold, size: FontSize.md))
+                    .frame(width: 68, alignment: .leading)
 
                 HStack(spacing: 0) {
                     ForEach(0..<7, id: \.self) { index in
@@ -465,7 +575,6 @@ private extension ProgressView {
                                             .fill(hitColor.opacity(0.2))
                                             .stroke(hitColor.opacity(0.5), lineWidth: 1)
                                             .frame(width: 22, height: 22)
-
                                         Image(systemName: "checkmark")
                                             .font(.system(size: 9, weight: .bold))
                                             .foregroundStyle(hitColor)
@@ -474,18 +583,15 @@ private extension ProgressView {
                                             .fill(Color.white.opacity(0.08))
                                             .stroke(Color.white.opacity(0.05), lineWidth: 1)
                                             .frame(width: 22, height: 22)
-
                                         Image(systemName: "xmark")
                                             .font(.system(size: 8, weight: .bold))
                                             .foregroundStyle(AppColors.lightMacroTextColor)
                                     }
                                 } else {
-                                    // No data / future day
                                     Circle()
                                         .fill(Color.white.opacity(0.04))
                                         .stroke(Color.white.opacity(0.03), lineWidth: 1)
                                         .frame(width: 22, height: 22)
-
                                     Circle()
                                         .fill(Color.white.opacity(0.15))
                                         .frame(width: 5, height: 5)
@@ -497,6 +603,225 @@ private extension ProgressView {
                 }
             }
             .padding(.vertical, Spacing.lg)
+        }
+    }
+
+    struct ConsistencyDetailSheet: View {
+        let calorieConsistency: [Bool?]
+        let proteinConsistency: [Bool?]
+        let carbsConsistency: [Bool?]
+        let fatConsistency: [Bool?]
+        let calPercent: Int
+        let proteinPercent: Int
+        let carbsPercent: Int
+        let fatPercent: Int
+        let overallScore: Int
+
+        @Environment(\.dismiss) private var dismiss
+
+        private var scoreColor: Color {
+            if overallScore >= 80 { return MacroColors.carbs }
+            if overallScore >= 60 { return MacroColors.calories }
+            if overallScore >= 40 { return MacroColors.fats }
+            return AppColors.negative
+        }
+
+        var body: some View {
+            NavigationStack {
+                ZStack {
+                    AppColors.background.ignoresSafeArea()
+
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: Spacing.xxl) {
+
+                            // Overall score hero
+                            HStack {
+                                Spacer()
+                                VStack(spacing: Spacing.sm) {
+                                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                        Text("\(overallScore)")
+                                            .foregroundStyle(scoreColor)
+                                            .font(.custom(Fonts.outfitSemiBold, size: 64))
+                                        Text("%")
+                                            .foregroundStyle(scoreColor)
+                                            .font(.custom(Fonts.outfitSemiBold, size: 32))
+                                    }
+                                    Text("Overall Consistency Score")
+                                        .foregroundStyle(AppColors.lightMacroTextColor)
+                                        .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                                }
+                                Spacer()
+                            }
+                            .padding(.top, Spacing.lg)
+
+                            // Individual breakdowns
+                            VStack(alignment: .leading, spacing: Spacing.lg) {
+                                Text("BREAKDOWN")
+                                    .foregroundStyle(AppColors.lightMacroTextColor)
+                                    .font(.custom(Fonts.interMedium, size: FontSize.xs))
+                                    .tracking(1)
+
+                                VStack(spacing: 0) {
+                                    DetailRow(label: "Calories", percent: calPercent, weight: "75%",
+                                              days: calorieConsistency, hitColor: MacroColors.calories,
+                                              description: "Within ±200 kcal of goal")
+                                    Divider().overlay(Color.white.opacity(0.06))
+                                    DetailRow(label: "Protein", percent: proteinPercent, weight: "8.3%",
+                                              days: proteinConsistency, hitColor: MacroColors.protein,
+                                              description: "At or above goal")
+                                    Divider().overlay(Color.white.opacity(0.06))
+                                    DetailRow(label: "Carbs", percent: carbsPercent, weight: "8.3%",
+                                              days: carbsConsistency, hitColor: MacroColors.carbs,
+                                              description: "Within ±20% of goal")
+                                    Divider().overlay(Color.white.opacity(0.06))
+                                    DetailRow(label: "Fat", percent: fatPercent, weight: "8.3%",
+                                              days: fatConsistency, hitColor: MacroColors.fats,
+                                              description: "Within ±20% of goal")
+                                }
+                                .background(
+                                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                                        .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: CornerRadius.sm)
+                                                .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                                        )
+                                )
+                            }
+
+                            // Formula
+                            VStack(alignment: .leading, spacing: Spacing.lg) {
+                                Text("HOW IT'S CALCULATED")
+                                    .foregroundStyle(AppColors.lightMacroTextColor)
+                                    .font(.custom(Fonts.interMedium, size: FontSize.xs))
+                                    .tracking(1)
+
+                                VStack(alignment: .leading, spacing: Spacing.md) {
+                                    Text("Score = (Calories × 75%) + (Protein × 8.3%) + (Carbs × 8.3%) + (Fat × 8.3%)")
+                                        .foregroundStyle(.white)
+                                        .font(.custom(Fonts.interSemiBold, size: FontSize.sm))
+                                        .fixedSize(horizontal: false, vertical: true)
+
+                                    Divider().overlay(Color.white.opacity(0.08))
+
+                                    Text("Each metric shows the % of logged days where you hit the target. Calories are weighted at 75% as the primary driver of body composition; protein, carbs, and fat each contribute an equal 8.3% of the remaining 25%.")
+                                        .foregroundStyle(AppColors.lightMacroTextColor)
+                                        .font(.custom(Fonts.interRegular, size: FontSize.sm))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                .padding(Spacing.lg)
+                                .background(
+                                    RoundedRectangle(cornerRadius: CornerRadius.sm)
+                                        .fill(CardStyle.fillColor.opacity(CardStyle.fillOpacity))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: CornerRadius.sm)
+                                                .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
+                                        )
+                                )
+                            }
+                        }
+                        .padding()
+                        .padding(.bottom, Spacing.xxl)
+                    }
+                }
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarBackground(AppColors.background, for: .navigationBar)
+                .toolbarBackground(.visible, for: .navigationBar)
+                .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        Text("Consistency Details")
+                            .foregroundColor(.white)
+                            .font(.custom(Fonts.outfitSemiBold, size: 18))
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }
+                            .foregroundColor(MacroColors.carbs)
+                    }
+                }
+            }
+            .presentationDragIndicator(.visible)
+            .presentationDetents([.large])
+        }
+    }
+
+    struct DetailRow: View {
+        let label: String
+        let percent: Int
+        let weight: String
+        let days: [Bool?]
+        let hitColor: Color
+        let description: String
+
+        private let dayLabels = ["M", "T", "W", "T", "F", "S", "S"]
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: Spacing.sm) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: Spacing.sm) {
+                            Circle()
+                                .fill(hitColor)
+                                .frame(width: 8, height: 8)
+                            Text(label)
+                                .foregroundStyle(.white)
+                                .font(.custom(Fonts.interSemiBold, size: FontSize.md))
+                        }
+                        Text(description)
+                            .foregroundStyle(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                            .padding(.leading, 16)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("\(percent)%")
+                            .foregroundStyle(hitColor)
+                            .font(.custom(Fonts.outfitSemiBold, size: FontSize.xl))
+                        Text("weight: \(weight)")
+                            .foregroundStyle(AppColors.lightMacroTextColor)
+                            .font(.custom(Fonts.interRegular, size: FontSize.xs))
+                    }
+                }
+
+                HStack(spacing: 0) {
+                    ForEach(0..<7, id: \.self) { index in
+                        VStack(spacing: 4) {
+                            Text(dayLabels[index])
+                                .foregroundStyle(AppColors.lightMacroTextColor)
+                                .font(.custom(Fonts.interMedium, size: FontSize.xs))
+                            ZStack {
+                                if let hit = days[index] {
+                                    if hit {
+                                        Circle()
+                                            .fill(hitColor.opacity(0.2))
+                                            .stroke(hitColor.opacity(0.5), lineWidth: 1)
+                                            .frame(width: 24, height: 24)
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 9, weight: .bold))
+                                            .foregroundStyle(hitColor)
+                                    } else {
+                                        Circle()
+                                            .fill(Color.white.opacity(0.08))
+                                            .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                                            .frame(width: 24, height: 24)
+                                        Image(systemName: "xmark")
+                                            .font(.system(size: 8, weight: .bold))
+                                            .foregroundStyle(AppColors.lightMacroTextColor)
+                                    }
+                                } else {
+                                    Circle()
+                                        .fill(Color.white.opacity(0.04))
+                                        .stroke(Color.white.opacity(0.03), lineWidth: 1)
+                                        .frame(width: 24, height: 24)
+                                    Circle()
+                                        .fill(Color.white.opacity(0.15))
+                                        .frame(width: 5, height: 5)
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+            }
+            .padding(Spacing.lg)
         }
     }
 }
