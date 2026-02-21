@@ -18,6 +18,7 @@ private func nutritionProgressColor(_ percent: Int) -> Color {
 }
 
 struct NutritionAnalysisView: View {
+    @Environment(UserGoals.self) private var userGoals
     @Query(sort: \MealEntry.date) private var allEntries: [MealEntry]
     var selectedDate: Date = Date()
 
@@ -71,9 +72,9 @@ struct NutritionAnalysisView: View {
                 // ── MACRONUTRIENTS ──────────────────────────────────
                 VStack(alignment: .leading, spacing: Spacing.lg) {
                     SectionLabel("MACRONUTRIENTS")
-                    MacroCard(icon: "dumbbell.fill", iconColor: MacroColors.protein, name: "Protein",       current: protein, goal: 180, unit: "g")
-                    MacroCard(icon: "bolt.fill", iconColor: MacroColors.carbs,   name: "Carbohydrates", current: carbs,   goal: 250, unit: "g")
-                    MacroCard(icon: "drop.fill", iconColor: MacroColors.fats,    name: "Fat",           current: fat,     goal: 70,  unit: "g")
+                    MacroCard(icon: "dumbbell.fill", iconColor: MacroColors.protein, name: "Protein",       current: protein, goal: Double(userGoals.proteinGoal), unit: "g")
+                    MacroCard(icon: "bolt.fill", iconColor: MacroColors.carbs,   name: "Carbohydrates", current: carbs,   goal: Double(userGoals.carbsGoal),   unit: "g")
+                    MacroCard(icon: "drop.fill", iconColor: MacroColors.fats,    name: "Fat",           current: fat,     goal: Double(userGoals.fatGoal),      unit: "g")
                 }
 
                 // ── CARB DETAILS ────────────────────────────────────

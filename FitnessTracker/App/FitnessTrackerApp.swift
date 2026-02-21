@@ -48,9 +48,12 @@ struct FitnessTrackerApp: App {
         }
     }()
 
+    @State private var userGoals = UserGoals()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(userGoals)
         }
         .modelContainer(sharedModelContainer)
     }

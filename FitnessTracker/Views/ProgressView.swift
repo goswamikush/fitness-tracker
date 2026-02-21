@@ -11,11 +11,9 @@ import Charts
 
 struct ProgressView: View {
 
+    @Environment(UserGoals.self) private var userGoals
     @Query(sort: \WeightEntry.date) private var weightEntries: [WeightEntry]
     @Query(sort: \MealEntry.date) private var allMealEntries: [MealEntry]
-
-    private let calorieGoal = 2400
-    private let proteinGoal = 180
 
     // Last 7 days (today + 6 prior), ordered Mon→Sun
     private var weekDates: [Date] {
@@ -63,7 +61,7 @@ struct ProgressView: View {
 
     private var proteinConsistencyPercent: Int {
         guard !daysWithData.isEmpty else { return 0 }
-        let hits = daysWithData.filter { dailyProtein(for: $0) >= proteinGoal }.count
+        let hits = daysWithData.filter { dailyProtein(for: $0) >= userGoals.proteinGoal }.count
         return Int((Double(hits) / Double(daysWithData.count)) * 100)
     }
 
@@ -74,7 +72,7 @@ struct ProgressView: View {
             guard date <= today, !entries(for: date).isEmpty else { return nil }
             let cals = dailyCalories(for: date)
             // "Hit" = within ±200 of goal
-            return abs(cals - calorieGoal) <= 200
+            return abs(cals - userGoals.calorieGoal) <= 200
         }
     }
 
@@ -83,7 +81,7 @@ struct ProgressView: View {
         let today = cal.startOfDay(for: Date())
         return weekDates.map { date in
             guard date <= today, !entries(for: date).isEmpty else { return nil }
-            return dailyProtein(for: date) >= proteinGoal
+            return dailyProtein(for: date) >= userGoals.proteinGoal
         }
     }
 

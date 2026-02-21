@@ -6,25 +6,21 @@
 import SwiftUI
 
 struct DashboardHeaderView: View {
+    @Environment(UserGoals.self) private var userGoals
     @Binding var selectedDate: Date
     var consumedCalories: Int = 0
     var consumedProtein: Int = 0
     var consumedCarbs: Int = 0
     var consumedFat: Int = 0
 
-    private let calorieGoal = 2400
-    private let proteinGoal = 180.0
-    private let carbsGoal = 250.0
-    private let fatGoal = 70.0
-
     private var remaining: Int {
-        max(calorieGoal - consumedCalories, 0)
+        max(userGoals.calorieGoal - consumedCalories, 0)
     }
 
     var body: some View {
         VStack(spacing: 20) {
             DateBar(selectedDate: $selectedDate)
-            CaloriesSection(consumed: consumedCalories, goal: calorieGoal, remaining: remaining)
+            CaloriesSection(consumed: consumedCalories, goal: userGoals.calorieGoal, remaining: remaining)
             NavigationLink(destination: NutritionAnalysisView(selectedDate: selectedDate)) {
                 HStack(spacing: Spacing.md) {
                     Image(systemName: "chart.pie")
@@ -114,10 +110,11 @@ private extension DashboardHeaderView {
 
                 Spacer()
 
-                // Invisible icon to balance layout
-                Image(systemName: "calendar")
-                    .font(.system(size: 18))
-                    .foregroundColor(.clear)
+                NavigationLink(destination: SettingsView()) {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 18))
+                        .foregroundColor(AppColors.lightMacroTextColor)
+                }
             }
             .padding(.horizontal)
             .padding(.top, Spacing.lg)
