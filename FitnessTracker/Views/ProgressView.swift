@@ -356,9 +356,15 @@ private extension ProgressView {
         var onBodyTap: (() -> Void)? = nil
 
         private var weekChange: Double {
-            guard let last = entries.last, entries.count >= 2 else { return 0 }
-            let prev = entries[entries.count - 2]
-            return last.weight - prev.weight
+            let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+            let recent = entries.filter { $0.date >= sevenDaysAgo }
+            guard let first = recent.first, let last = recent.last, first.id != last.id else { return 0 }
+            return last.weight - first.weight
+        }
+
+        private var weekChangeLabel: String {
+            let sign = weekChange >= 0 ? "+" : ""
+            return "\(sign)\(String(format: "%.1f", weekChange))kg past 7 days"
         }
 
         private var yMin: Double {
@@ -386,7 +392,7 @@ private extension ProgressView {
                             .foregroundStyle(.white)
                             .font(.custom(Fonts.interSemiBold, size: FontSize.lg))
 
-                        Text("\(String(format: "%.1f", weekChange))kg this week")
+                        Text(weekChangeLabel)
                             .foregroundStyle(AppColors.lightMacroTextColor)
                             .font(.custom(Fonts.interRegular, size: FontSize.sm))
                     }
