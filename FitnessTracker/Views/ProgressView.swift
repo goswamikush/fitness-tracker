@@ -10,21 +10,35 @@ import SwiftData
 import Charts
 
 struct ProgressView: View {
+    var onBodyTap: (() -> Void)? = nil
 
     @Environment(UserGoals.self) private var userGoals
     @Query(sort: \WeightEntry.date) private var weightEntries: [WeightEntry]
     @Query(sort: \MealEntry.date) private var allMealEntries: [MealEntry]
 
-    // Last 7 days (today + 6 prior), ordered Mon→Sun
+    @State private var referenceDate = Date()
+    @State private var showDatePicker = false
+
+    // Week containing referenceDate, ordered Mon→Sun
     private var weekDates: [Date] {
         let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        // Find the Monday of the current week
-        let weekday = cal.component(.weekday, from: today)
-        // weekday: 1=Sun, 2=Mon, ...
+        let ref = cal.startOfDay(for: referenceDate)
+        let weekday = cal.component(.weekday, from: ref)
         let daysFromMonday = (weekday + 5) % 7
-        let monday = cal.date(byAdding: .day, value: -daysFromMonday, to: today)!
+        let monday = cal.date(byAdding: .day, value: -daysFromMonday, to: ref)!
         return (0..<7).map { cal.date(byAdding: .day, value: $0, to: monday)! }
+    }
+
+    private var weekLabel: String {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let weekday = cal.component(.weekday, from: today)
+        let daysFromMonday = (weekday + 5) % 7
+        let thisMonday = cal.date(byAdding: .day, value: -daysFromMonday, to: today)!
+        if cal.isDate(weekDates[0], inSameDayAs: thisMonday) { return "This Week" }
+        let fmt = DateFormatter()
+        fmt.dateFormat = "MMM d"
+        return "\(fmt.string(from: weekDates[0])) – \(fmt.string(from: weekDates[6]))"
     }
 
     private func entries(for date: Date) -> [MealEntry] {
@@ -91,7 +105,7 @@ struct ProgressView: View {
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                Header()
+                Header(weekLabel: weekLabel, referenceDate: $referenceDate, showDatePicker: $showDatePicker)
                     .padding(.horizontal)
 
                 ScrollView {
@@ -101,7 +115,7 @@ struct ProgressView: View {
                             avgProtein: avgProtein,
                             proteinConsistencyPercent: proteinConsistencyPercent
                         )
-                        WeightTrendCard(entries: weightEntries)
+                        WeightTrendCard(entries: weightEntries, onBodyTap: onBodyTap)
                         GoalConsistencySection(
                             calorieConsistency: calorieConsistency,
                             proteinConsistency: proteinConsistency
@@ -122,6 +136,10 @@ struct ProgressView: View {
 private extension ProgressView {
 
     struct Header: View {
+        let weekLabel: String
+        @Binding var referenceDate: Date
+        @Binding var showDatePicker: Bool
+
         var body: some View {
             VStack(spacing: Spacing.md) {
                 HStack {
@@ -130,21 +148,50 @@ private extension ProgressView {
                             .foregroundStyle(.white)
                             .font(.custom(Fonts.outfitSemiBold, size: 22))
 
-                        Text("This Week")
+                        Text(weekLabel)
                             .foregroundStyle(AppColors.lightMacroTextColor)
                             .font(.custom(Fonts.interRegular, size: FontSize.sm))
                     }
 
                     Spacer()
 
-                    Image(systemName: "calendar")
-                        .font(.system(size: IconSize.lg, weight: .medium))
-                        .foregroundColor(AppColors.macroTextColor)
+                    Button {
+                        showDatePicker = true
+                    } label: {
+                        Image(systemName: "calendar")
+                            .font(.system(size: IconSize.lg, weight: .medium))
+                            .foregroundColor(AppColors.macroTextColor)
+                    }
+                }
+                .sheet(isPresented: $showDatePicker) {
+                    WeekPickerSheet(referenceDate: $referenceDate, isPresented: $showDatePicker)
                 }
 
                 Divider()
                     .overlay(AppColors.macroTextColor.opacity(Opacity.divider))
             }
+        }
+    }
+
+    struct WeekPickerSheet: View {
+        @Binding var referenceDate: Date
+        @Binding var isPresented: Bool
+
+        var body: some View {
+            NavigationStack {
+                DatePicker("Select Week", selection: $referenceDate, in: ...Date(), displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .tint(MacroColors.carbs)
+                    .padding()
+                    .navigationTitle("Select Week")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { isPresented = false }
+                        }
+                    }
+            }
+            .presentationDetents([.medium])
         }
     }
 }
@@ -259,6 +306,7 @@ private extension ProgressView {
 
     struct WeightTrendCard: View {
         let entries: [WeightEntry]
+        var onBodyTap: (() -> Void)? = nil
 
         private var weekChange: Double {
             guard let last = entries.last, entries.count >= 2 else { return 0 }
@@ -343,6 +391,8 @@ private extension ProgressView {
                     )
                     .shadow(color: .black.opacity(CardStyle.shadowOpacity), radius: CardStyle.shadowRadius, y: CardStyle.shadowY)
             )
+            .contentShape(Rectangle())
+            .onTapGesture { onBodyTap?() }
         }
     }
 }

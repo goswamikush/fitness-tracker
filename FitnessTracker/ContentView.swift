@@ -35,7 +35,7 @@ struct ContentView: View {
 
             Tab(value: 2) {
                 NavigationStack {
-                    ProgressView()
+                    ProgressView(onBodyTap: { selectedTab = 0 })
                 }
             } label: {
                 Image("chart-pie")
