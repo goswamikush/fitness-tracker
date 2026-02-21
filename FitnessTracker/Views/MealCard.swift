@@ -52,7 +52,6 @@ struct MealCard: View {
                         .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
                 )
         )
-        .clipped()
         .animation(.easeInOut(duration: 0.25), value: isExpanded)
     }
 
@@ -134,7 +133,7 @@ private extension MealCard {
                 ExpandedHeader(mealName: mealName, logDate: logDate, entries: entries, totalCalories: totalCalories, isExpanded: $isExpanded)
                     .padding(.bottom, Spacing.md)
 
-                List {
+                VStack(spacing: 0) {
                     ForEach(entries) { entry in
                         Button {
                             editingEntry = entry
@@ -147,27 +146,23 @@ private extension MealCard {
                                 fat: Int(entry.fat),
                                 servingDisplay: entry.servingDisplay
                             )
+                            .padding(.vertical, Spacing.md)
                         }
                         .buttonStyle(.plain)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-                        .listRowSeparator(.hidden)
-                        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                        .contextMenu {
                             Button(role: .destructive) {
-                                withAnimation {
-                                    onDelete(entry)
-                                }
+                                withAnimation { onDelete(entry) }
                             } label: {
                                 Label("Delete", systemImage: "trash")
                             }
-                            .tint(.red)
+                        }
+
+                        if entry.id != entries.last?.id {
+                            Divider()
+                                .overlay(Color.white.opacity(0.06))
                         }
                     }
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .frame(height: CGFloat(entries.count) * 56)
-                .scrollDisabled(true)
                 .navigationDestination(item: $editingEntry) { entry in
                     AddEntryView(entry: entry)
                 }
