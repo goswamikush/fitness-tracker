@@ -17,7 +17,7 @@ struct FoodItemRow: View {
         VStack {
             HStack {
                 VStack(alignment: .leading) {
-                    Text(name)
+                    Text(name.capitalized)
                         .foregroundStyle(.white)
                         .font(.custom(Fonts.interMedium, size: FontSize.lg))
 
