@@ -57,18 +57,21 @@ class USDAService {
         let nutriments = product["nutriments"] as? [String: Any] ?? [:]
 
         func nutrient(_ key: String) -> Double {
-            (nutriments[key] as? Double) ?? 0.0
+            (nutriments[key] as? NSNumber)?.doubleValue ?? 0.0
         }
 
         let servingSize = product["serving_quantity"] as? Double
             ?? (product["serving_quantity"] as? String).flatMap(Double.init)
         let servingSizeUnit = product["serving_quantity_unit"] as? String ?? "g"
 
+        let kcalDirect = nutrient("energy-kcal_100g")
+        let kcal = kcalDirect > 0 ? kcalDirect : nutrient("energy_100g") / 4.184
+
         let result = USDAFoodResult(
             id: Int(barcode.suffix(9)) ?? barcode.hashValue,
             name: name,
             brand: brand,
-            caloriesPer100g: nutrient("energy-kcal_100g"),
+            caloriesPer100g: kcal,
             proteinPer100g: nutrient("proteins_100g"),
             carbsPer100g: nutrient("carbohydrates_100g"),
             fatPer100g: nutrient("fat_100g"),
