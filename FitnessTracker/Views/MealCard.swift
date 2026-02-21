@@ -141,7 +141,7 @@ private extension MealCard {
                             protein: Int(entry.protein),
                             carbs: Int(entry.carbs),
                             fat: Int(entry.fat),
-                            servingGrams: Int(entry.servingGrams)
+                            servingDisplay: entry.servingDisplay
                         )
                         .listRowBackground(Color.clear)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 16))

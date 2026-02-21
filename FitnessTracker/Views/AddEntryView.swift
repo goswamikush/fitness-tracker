@@ -37,6 +37,7 @@ struct AddEntryView: View {
     var onUpdateServing: ((Double) -> Void)?
 
     @State private var servingGrams: Double
+    @State private var selectedUnit: ServingUnit
 
     init(usdaResult: USDAFoodResult, mealName: String, logDate: Date = Date()) {
         self.fdcId = usdaResult.id
@@ -61,6 +62,8 @@ struct AddEntryView: View {
         self.vitaminDPer100g = usdaResult.vitaminDPer100g
         self.initialServingSize = usdaResult.servingSize
         self.servingSizeUnit = usdaResult.servingSizeUnit
+        let units = ServingUnit.availableUnits(foodServingSize: usdaResult.servingSize, foodServingSizeUnit: usdaResult.servingSizeUnit)
+        self._selectedUnit = State(initialValue: units.first ?? .grams)
         self._servingGrams = State(initialValue: usdaResult.servingSize ?? 100)
     }
 
@@ -87,6 +90,8 @@ struct AddEntryView: View {
         self.vitaminDPer100g = foodItem.vitaminDPer100g
         self.initialServingSize = foodItem.servingSize
         self.servingSizeUnit = foodItem.servingSizeUnit
+        let units = ServingUnit.availableUnits(foodServingSize: foodItem.servingSize, foodServingSizeUnit: foodItem.servingSizeUnit)
+        self._selectedUnit = State(initialValue: units.first ?? .grams)
         self._servingGrams = State(initialValue: foodItem.servingSize ?? 100)
     }
 
@@ -114,7 +119,13 @@ struct AddEntryView: View {
         self.initialServingSize = foodItem.servingSize
         self.servingSizeUnit = foodItem.servingSizeUnit
         self.onUpdateServing = onUpdateServing
+        let units = ServingUnit.availableUnits(foodServingSize: foodItem.servingSize, foodServingSizeUnit: foodItem.servingSizeUnit)
+        self._selectedUnit = State(initialValue: units.first ?? .grams)
         self._servingGrams = State(initialValue: servingGrams)
+    }
+
+    private var availableUnits: [ServingUnit] {
+        ServingUnit.availableUnits(foodServingSize: initialServingSize, foodServingSizeUnit: servingSizeUnit)
     }
 
     private var calories: Int { Int((caloriesPer100g * servingGrams) / 100) }
@@ -145,7 +156,7 @@ struct AddEntryView: View {
             ScrollView {
                 VStack(spacing: Spacing.xl) {
                     FoodHeader(brand: brand, name: foodName, servingSize: servingDisplay)
-                    ServingRow(servingGrams: $servingGrams)
+                    ServingRow(servingGrams: $servingGrams, selectedUnit: $selectedUnit, availableUnits: availableUnits)
                     CalculateByDivider()
                     TargetCaloriesRow(servingGrams: $servingGrams, caloriesPer100g: caloriesPer100g)
                     MacroRingsRow(protein: protein, carbs: carbs, fat: fat)
@@ -213,7 +224,9 @@ struct AddEntryView: View {
             date: logDate,
             mealType: mealName,
             servingGrams: servingGrams,
-            foodItem: food
+            foodItem: food,
+            servingUnit: selectedUnit.label,
+            servingQuantity: selectedUnit.fromGrams(servingGrams)
         )
         modelContext.insert(entry)
 
@@ -268,21 +281,24 @@ private extension AddEntryView {
 
     struct ServingRow: View {
         @Binding var servingGrams: Double
-        @State private var servingText: String = ""
+        @Binding var selectedUnit: ServingUnit
+        let availableUnits: [ServingUnit]
+
+        @State private var quantityText: String = ""
         @FocusState private var isFocused: Bool
 
         var body: some View {
             HStack(spacing: 0) {
-                TextField("100", text: $servingText)
+                TextField("0", text: $quantityText)
                     .foregroundColor(.white)
                     .font(.custom(Fonts.interMedium, size: FontSize.lg))
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
                     .focused($isFocused)
-                    .onChange(of: servingText) { _, newValue in
-                        if isFocused, let val = Double(newValue), val > 0 {
-                            servingGrams = val
+                    .onChange(of: quantityText) { _, newValue in
+                        if isFocused, let qty = Double(newValue), qty > 0 {
+                            servingGrams = selectedUnit.toGrams(qty)
                         }
                     }
 
@@ -290,10 +306,31 @@ private extension AddEntryView {
                     .frame(height: 24)
                     .overlay(Color.white.opacity(CardStyle.borderOpacity))
 
-                Text("g")
-                    .foregroundColor(AppColors.macroTextColor)
-                    .font(.custom(Fonts.interMedium, size: FontSize.lg))
-                    .frame(width: 80)
+                Menu {
+                    ForEach(availableUnits) { unit in
+                        Button {
+                            let qty = unit.fromGrams(servingGrams)
+                            selectedUnit = unit
+                            quantityText = formatQty(qty)
+                        } label: {
+                            if unit == selectedUnit {
+                                Label(unit.menuLabel, systemImage: "checkmark")
+                            } else {
+                                Text(unit.menuLabel)
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(selectedUnit.label)
+                            .foregroundColor(AppColors.macroTextColor)
+                            .font(.custom(Fonts.interMedium, size: FontSize.lg))
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(AppColors.macroTextColor)
+                    }
+                    .frame(width: 90)
+                }
             }
             .padding(.vertical, Spacing.lg)
             .background(
@@ -301,13 +338,17 @@ private extension AddEntryView {
                     .stroke(Color.white.opacity(CardStyle.borderOpacity), lineWidth: CardStyle.borderWidth)
             )
             .onAppear {
-                servingText = "\(Int(servingGrams))"
+                quantityText = formatQty(selectedUnit.fromGrams(servingGrams))
             }
             .onChange(of: servingGrams) { _, newValue in
                 if !isFocused {
-                    servingText = "\(Int(newValue))"
+                    quantityText = formatQty(selectedUnit.fromGrams(newValue))
                 }
             }
+        }
+
+        private func formatQty(_ qty: Double) -> String {
+            qty == Double(Int(qty)) ? "\(Int(qty))" : String(format: "%.2f", qty)
         }
     }
 

@@ -11,7 +11,7 @@ struct FoodItemRow: View {
     let protein: Int
     let carbs: Int
     let fat: Int
-    let servingGrams: Int
+    let servingDisplay: String
 
     var body: some View {
         VStack {
@@ -35,7 +35,7 @@ struct FoodItemRow: View {
                             Circle()
                                 .fill(AppColors.macroTextColor)
                                 .frame(width: IconSize.xs, height: IconSize.xs)
-                            Text("\(servingGrams)g")
+                            Text(servingDisplay)
                                 .foregroundStyle(AppColors.macroTextColor.opacity(0.6))
                                 .font(.custom(Fonts.interRegular, size: FontSize.xs))
                         }
@@ -79,7 +79,7 @@ private extension FoodItemRow {
             .ignoresSafeArea()
 
         VStack(alignment: .leading, spacing: 8) {
-            FoodItemRow(name: "Grilled Chicken Salad", calories: 450, protein: 45, carbs: 12, fat: 20, servingGrams: 256)
+            FoodItemRow(name: "Grilled Chicken Salad", calories: 450, protein: 45, carbs: 12, fat: 20, servingDisplay: "256g")
         }
         .padding()
     }
