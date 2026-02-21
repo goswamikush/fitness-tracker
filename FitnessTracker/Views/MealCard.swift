@@ -150,7 +150,7 @@ private extension MealCard {
                         }
                         .buttonStyle(.plain)
                         .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 16))
+                        .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
                         .listRowSeparator(.hidden)
                         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                             Button(role: .destructive) {
